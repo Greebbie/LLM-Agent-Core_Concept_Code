@@ -4,15 +4,19 @@
 支持多种后端:
 1. OpenAI API (GPT-3.5/GPT-4)
 2. Ollama (本地模型如 Llama, Qwen, Mistral)
-3. HuggingFace Transformers (本地运行)
-4. vLLM (高性能推理服务)
+3. DashScope / 通义千问 API (阿里云，OpenAI 兼容)
+4. HuggingFace Transformers (本地运行)
+5. vLLM (高性能推理服务)
 
 使用示例:
-    # OpenAI
-    llm = get_llm_backend("openai", model="gpt-3.5-turbo")
-
     # Ollama (本地)
     llm = get_llm_backend("ollama", model="qwen2.5:7b")
+
+    # DashScope / 通义千问 (云端 API，推荐)
+    llm = get_llm_backend("dashscope", model="qwen-plus")
+
+    # OpenAI
+    llm = get_llm_backend("openai", model="gpt-3.5-turbo")
 
     # HuggingFace (本地)
     llm = get_llm_backend("huggingface", model="Qwen/Qwen2.5-1.5B-Instruct")
@@ -118,6 +122,31 @@ class OpenAIBackend(BaseLLMBackend):
         for chunk in stream:
             if chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
+
+
+class DashScopeBackend(OpenAIBackend):
+    """
+    DashScope / 通义千问 API 后端（阿里云）
+
+    OpenAI 兼容接口，无需本地 GPU。
+    申请 API Key: https://dashscope.console.aliyun.com/
+
+    模型列表:
+      - qwen-plus      : 性价比最高（推荐）
+      - qwen-turbo      : 最快、最便宜
+      - qwen-max        : 最强
+      - qwen-long       : 长上下文
+    """
+
+    def __init__(self, config: LLMConfig):
+        config.base_url = config.base_url or "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        config.api_key = config.api_key or os.getenv("DASHSCOPE_API_KEY")
+        if not config.api_key:
+            raise ValueError(
+                "请设置 DASHSCOPE_API_KEY 环境变量，或传入 api_key 参数。\n"
+                "申请地址: https://dashscope.console.aliyun.com/"
+            )
+        super().__init__(config)
 
 
 class OllamaBackend(BaseLLMBackend):
@@ -318,7 +347,7 @@ def get_llm_backend(
     获取 LLM 后端实例
 
     Args:
-        backend: 后端类型 ("openai", "ollama", "huggingface", "vllm")
+        backend: 后端类型 ("ollama", "dashscope", "openai", "huggingface", "vllm")
         model: 模型名称
         **kwargs: 其他配置参数
 
@@ -326,19 +355,20 @@ def get_llm_backend(
         BaseLLMBackend: LLM 后端实例
 
     示例:
-        # OpenAI
-        llm = get_llm_backend("openai", model="gpt-3.5-turbo")
-
-        # Ollama (推荐用于本地)
+        # Ollama (本地免费)
         llm = get_llm_backend("ollama", model="qwen2.5:7b")
 
-        # HuggingFace
-        llm = get_llm_backend("huggingface", model="Qwen/Qwen2.5-1.5B-Instruct")
+        # DashScope / 通义千问 (云端 API，推荐)
+        llm = get_llm_backend("dashscope", model="qwen-plus")
+
+        # OpenAI
+        llm = get_llm_backend("openai", model="gpt-3.5-turbo")
     """
     # 默认模型
     default_models = {
         "openai": "gpt-3.5-turbo",
         "ollama": "qwen2.5:7b",
+        "dashscope": "qwen-plus",
         "huggingface": "Qwen/Qwen2.5-1.5B-Instruct",
         "vllm": "Qwen/Qwen2.5-7B-Instruct",
     }
@@ -349,6 +379,7 @@ def get_llm_backend(
     backends = {
         "openai": OpenAIBackend,
         "ollama": OllamaBackend,
+        "dashscope": DashScopeBackend,
         "huggingface": HuggingFaceBackend,
         "hf": HuggingFaceBackend,
         "vllm": VLLMBackend,
@@ -364,7 +395,7 @@ def auto_detect_backend() -> BaseLLMBackend:
     """
     自动检测可用的后端
 
-    优先级: Ollama > OpenAI > HuggingFace
+    优先级: Ollama > DashScope > OpenAI > HuggingFace
     """
     import requests
 
@@ -380,12 +411,17 @@ def auto_detect_backend() -> BaseLLMBackend:
     except:
         pass
 
-    # 2. 尝试 OpenAI
+    # 2. 尝试 DashScope / 通义千问
+    if os.getenv("DASHSCOPE_API_KEY"):
+        print("✓ 检测到 DASHSCOPE_API_KEY，使用通义千问 (qwen-plus)")
+        return get_llm_backend("dashscope", model="qwen-plus")
+
+    # 3. 尝试 OpenAI
     if os.getenv("OPENAI_API_KEY"):
         print("✓ 检测到 OPENAI_API_KEY，使用 OpenAI")
         return get_llm_backend("openai")
 
-    # 3. 使用 HuggingFace (总是可用，但需要下载模型)
+    # 4. 使用 HuggingFace (总是可用，但需要下载模型)
     print("⚠️ 使用 HuggingFace 本地模型 (首次运行需要下载)")
     return get_llm_backend("huggingface", model="Qwen/Qwen2.5-0.5B-Instruct")
 
@@ -404,5 +440,14 @@ if __name__ == "__main__":
         print(f"\nOllama 测试: {response}")
     except Exception as e:
         print(f"\nOllama 不可用: {e}")
+
+    # 测试 DashScope (如果配置了 API Key)
+    if os.getenv("DASHSCOPE_API_KEY"):
+        try:
+            llm = get_llm_backend("dashscope", model="qwen-plus")
+            response = llm.chat([{"role": "user", "content": "Say 'Hello' in one word."}])
+            print(f"\nDashScope 测试: {response}")
+        except Exception as e:
+            print(f"\nDashScope 不可用: {e}")
 
     print("\n✓ LLM Backend 模块加载成功!")
