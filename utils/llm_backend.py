@@ -339,7 +339,7 @@ class VLLMBackend(BaseLLMBackend):
 # ==================== 便捷工厂函数 ====================
 
 def get_llm_backend(
-    backend: str = "ollama",
+    backend: str = "dashscope",
     model: str = None,
     **kwargs
 ) -> BaseLLMBackend:
@@ -395,11 +395,16 @@ def auto_detect_backend() -> BaseLLMBackend:
     """
     自动检测可用的后端
 
-    优先级: Ollama > DashScope > OpenAI > HuggingFace
+    优先级: DashScope > Ollama > OpenAI > HuggingFace
     """
     import requests
 
-    # 1. 尝试 Ollama
+    # 1. 尝试 DashScope / 通义千问（推荐，阿里百炼）
+    if os.getenv("DASHSCOPE_API_KEY"):
+        print("✓ 检测到 DASHSCOPE_API_KEY，使用通义千问 (qwen-plus)")
+        return get_llm_backend("dashscope", model="qwen-plus")
+
+    # 2. 尝试 Ollama（本地）
     try:
         resp = requests.get("http://localhost:11434/api/tags", timeout=2)
         if resp.status_code == 200:
@@ -411,18 +416,14 @@ def auto_detect_backend() -> BaseLLMBackend:
     except:
         pass
 
-    # 2. 尝试 DashScope / 通义千问
-    if os.getenv("DASHSCOPE_API_KEY"):
-        print("✓ 检测到 DASHSCOPE_API_KEY，使用通义千问 (qwen-plus)")
-        return get_llm_backend("dashscope", model="qwen-plus")
-
     # 3. 尝试 OpenAI
     if os.getenv("OPENAI_API_KEY"):
         print("✓ 检测到 OPENAI_API_KEY，使用 OpenAI")
         return get_llm_backend("openai")
 
     # 4. 使用 HuggingFace (总是可用，但需要下载模型)
-    print("⚠️ 使用 HuggingFace 本地模型 (首次运行需要下载)")
+    print("⚠️ 未检测到 API Key，使用 HuggingFace 本地模型 (首次运行需要下载)")
+    print("💡 推荐设置 DASHSCOPE_API_KEY 使用阿里百炼: https://dashscope.console.aliyun.com/")
     return get_llm_backend("huggingface", model="Qwen/Qwen2.5-0.5B-Instruct")
 
 

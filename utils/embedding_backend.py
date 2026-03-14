@@ -2,18 +2,22 @@
 统一的 Embedding 后端接口
 
 支持多种后端:
-1. SentenceTransformers (推荐，本地运行)
-2. OpenAI Embeddings API
-3. HuggingFace Transformers
+1. DashScope / 通义千问 (推荐，阿里百炼 API)
+2. SentenceTransformers (本地运行)
+3. OpenAI Embeddings API
+4. HuggingFace Transformers
+5. Ollama (本地)
 
 使用示例:
-    # SentenceTransformers (推荐)
-    embedder = get_embedding_backend("sentence-transformers")
+    # DashScope / 通义千问 (推荐)
+    embedder = get_embedding_backend("dashscope")
     vectors = embedder.embed(["Hello world", "How are you?"])
 
+    # SentenceTransformers (本地)
+    embedder = get_embedding_backend("sentence-transformers")
+
     # OpenAI
-    embedder = get_embedding_backend("openai")
-    vectors = embedder.embed(["Hello world"])
+    embedder = get_embedding_backend("openai", model="text-embedding-3-small")
 """
 
 import os
@@ -134,6 +138,68 @@ class OpenAIEmbeddingBackend(BaseEmbeddingBackend):
         return result
 
 
+class DashScopeEmbeddingBackend(OpenAIEmbeddingBackend):
+    """
+    DashScope / 通义千问 Embedding 后端（阿里云百炼）
+
+    OpenAI 兼容接口，无需本地 GPU。
+    申请 API Key: https://dashscope.console.aliyun.com/
+
+    模型列表:
+      - text-embedding-v3  : 最新，1024维（推荐）
+      - text-embedding-v2  : 稳定版，1536维
+    """
+
+    MODELS = {
+        "text-embedding-v3": 1024,
+        "text-embedding-v2": 1536,
+    }
+
+    def __init__(self, config: EmbeddingConfig):
+        config.api_key = config.api_key or os.getenv("DASHSCOPE_API_KEY")
+        if not config.api_key:
+            raise ValueError(
+                "请设置 DASHSCOPE_API_KEY 环境变量，或传入 api_key 参数。\n"
+                "申请地址: https://dashscope.console.aliyun.com/"
+            )
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("请安装: pip install openai")
+
+        # 不调用 super().__init__，直接构建 client
+        BaseEmbeddingBackend.__init__(self, config)
+        self.client = OpenAI(
+            api_key=config.api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+        )
+        self.config.dimension = self.MODELS.get(config.model, 1024)
+
+    def embed(self, texts: Union[str, List[str]]) -> np.ndarray:
+        if isinstance(texts, str):
+            texts = [texts]
+
+        # DashScope 限制每批最多 10 条
+        all_embeddings = []
+        batch_size = 10
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            response = self.client.embeddings.create(
+                model=self.config.model,
+                input=batch
+            )
+            batch_emb = [item.embedding for item in response.data]
+            all_embeddings.extend(batch_emb)
+
+        result = np.array(all_embeddings)
+
+        if self.config.normalize:
+            norms = np.linalg.norm(result, axis=1, keepdims=True)
+            result = result / np.maximum(norms, 1e-10)
+
+        return result
+
+
 class HuggingFaceEmbeddingBackend(BaseEmbeddingBackend):
     """HuggingFace Transformers 后端"""
 
@@ -230,7 +296,7 @@ class OllamaEmbeddingBackend(BaseEmbeddingBackend):
 # ==================== 便捷工厂函数 ====================
 
 def get_embedding_backend(
-    backend: str = "sentence-transformers",
+    backend: str = "dashscope",
     model: str = None,
     **kwargs
 ) -> BaseEmbeddingBackend:
@@ -246,19 +312,17 @@ def get_embedding_backend(
         BaseEmbeddingBackend 实例
 
     示例:
-        # SentenceTransformers (推荐)
-        embedder = get_embedding_backend("sentence-transformers")
+        # DashScope / 通义千问 (推荐)
+        embedder = get_embedding_backend("dashscope")
 
-        # 中文模型
-        embedder = get_embedding_backend(
-            "sentence-transformers",
-            model="shibing624/text2vec-base-chinese"
-        )
+        # SentenceTransformers (本地)
+        embedder = get_embedding_backend("sentence-transformers")
 
         # OpenAI
         embedder = get_embedding_backend("openai", model="text-embedding-3-small")
     """
     default_models = {
+        "dashscope": "text-embedding-v3",
         "sentence-transformers": "all-MiniLM-L6-v2",
         "st": "all-MiniLM-L6-v2",
         "openai": "text-embedding-3-small",
@@ -267,10 +331,11 @@ def get_embedding_backend(
         "ollama": "nomic-embed-text",
     }
 
-    model = model or default_models.get(backend, "all-MiniLM-L6-v2")
+    model = model or default_models.get(backend, "text-embedding-v3")
     config = EmbeddingConfig(model=model, **kwargs)
 
     backends = {
+        "dashscope": DashScopeEmbeddingBackend,
         "sentence-transformers": SentenceTransformersBackend,
         "st": SentenceTransformersBackend,
         "openai": OpenAIEmbeddingBackend,
@@ -306,10 +371,13 @@ class SimpleVectorStore:
         """
         if embedding_backend is None:
             try:
-                embedding_backend = get_embedding_backend("sentence-transformers")
-            except ImportError:
-                print("⚠️ sentence-transformers 不可用，使用简单的 TF-IDF")
-                embedding_backend = TFIDFEmbeddingBackend()
+                embedding_backend = get_embedding_backend("dashscope")
+            except (ImportError, ValueError):
+                try:
+                    embedding_backend = get_embedding_backend("sentence-transformers")
+                except ImportError:
+                    print("⚠️ 无可用 Embedding 后端，使用简单的 TF-IDF")
+                    embedding_backend = TFIDFEmbeddingBackend()
 
         self.embedder = embedding_backend
         self.documents: List[str] = []

@@ -38,6 +38,11 @@ accelerate>=0.25.0
 requests>=2.31.0
 
 # -----------------------------------------------------------------------------
+# Tokenizer 工具
+# -----------------------------------------------------------------------------
+tiktoken>=0.5.0
+
+# -----------------------------------------------------------------------------
 # Embedding 模型 (RAG 系统)
 # -----------------------------------------------------------------------------
 sentence-transformers>=2.2.0
@@ -75,15 +80,21 @@ pandas>=2.0.0
 # 环境配置说明
 # =============================================================================
 #
-# 1. 使用 Ollama (推荐，免费本地运行):
+# 1. 使用阿里百炼 DashScope API (推荐，统一后端):
+#    - 申请 API Key: https://dashscope.console.aliyun.com/
+#    - 设置环境变量: export DASHSCOPE_API_KEY="sk-xxx"
+#    - LLM 模型: qwen-plus (推荐) / qwen-turbo / qwen-max
+#    - Embedding 模型: text-embedding-v3
+#
+# 2. 使用 Ollama (免费本地运行):
 #    - 下载安装: https://ollama.ai/download
 #    - 拉取模型: ollama pull qwen2.5:7b
 #    - 运行服务: ollama serve
 #
-# 2. 使用 OpenAI API:
+# 3. 使用 OpenAI API:
 #    - 设置环境变量: export OPENAI_API_KEY="your-key"
 #
-# 3. 使用 HuggingFace 模型:
+# 4. 使用 HuggingFace 模型:
 #    - 模型会自动下载到 ~/.cache/huggingface/
 #    - 推荐模型: Qwen/Qwen2.5-1.5B-Instruct (小型)
 #
