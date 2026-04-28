@@ -1,0 +1,51 @@
+# ====================================================================
+# Enterprise AI 5-Day Training — 完整依赖
+# 在 enterprise_ver2 基础上新增 Day 4-5 所需的 MCP / LLMOps / Agentic RAG 库
+# ====================================================================
+
+# ─── 核心（沿用 3 天版） ───
+torch>=2.0
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+tqdm
+ipywidgets
+tiktoken
+
+# ─── Transformers 全家桶 ───
+transformers>=4.40
+accelerate
+peft
+trl
+datasets
+
+# ─── LLM API 后端 ───
+openai>=1.0          # DashScope 兼容接口
+requests
+
+# ─── Day 4-5 新增 ───────────────────────────────
+
+# Embedding & Reranker (Day 5 上午 Agentic RAG)
+sentence-transformers>=3.0    # bge-reranker / bge-small / 等
+rank-bm25                     # BM25 sparse retrieval
+
+# MCP Protocol (Day 4 下午)
+mcp>=0.9                      # Anthropic 官方 MCP SDK
+pydantic>=2.0                 # MCP schema 校验
+
+# LLMOps Observability (Day 5 下午)
+langfuse>=2.0                 # trace + observability dashboard
+opentelemetry-api             # OTEL 标准 trace
+opentelemetry-sdk
+opentelemetry-instrumentation
+
+# Multi-Agent + 异步
+anyio                         # async tool 用
+httpx                         # 异步 HTTP
+
+# ─── 教学辅助 ───
+jupyter
+notebook
+nbconvert

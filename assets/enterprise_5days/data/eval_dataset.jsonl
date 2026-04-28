@@ -1,0 +1,10 @@
+{"query": "入职 7 年的员工有几天年假？", "expected_keywords": ["10", "天"], "category": "hr"}
+{"query": "病假怎么算？要什么材料？", "expected_keywords": ["医院证明", "全薪"], "category": "hr"}
+{"query": "API 限流是多少？", "expected_keywords": ["60", "6000", "req"], "category": "tech"}
+{"query": "API 鉴权用什么方式？token 多久过期？", "expected_keywords": ["Bearer", "30 天"], "category": "tech"}
+{"query": "出现 429 错误怎么办？", "expected_keywords": ["指数退避", "重试"], "category": "tech"}
+{"query": "StarLink 基础版多少钱？", "expected_keywords": ["199", "月"], "category": "product"}
+{"query": "StarLink 企业版价格 + 并发是多少？", "expected_keywords": ["1999", "100"], "category": "product"}
+{"query": "SKU-A100 是什么？多少钱？", "expected_keywords": ["StarLink", "4999"], "category": "product"}
+{"query": "公司有医疗保险吗？", "expected_keywords": ["未覆盖", "无", "建议"], "category": "ood"}
+{"query": "如何申请加班补贴？", "expected_keywords": ["未", "建议", "无"], "category": "ood"}
