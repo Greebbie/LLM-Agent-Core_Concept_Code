@@ -15,11 +15,15 @@
 enterprise_5days/
 ├── instructor/             # 讲师版 11 本（含答案 + 内嵌讲课提示 + 全 cell output）⚠️ 不要群发学员
 ├── student/                # 学员版 11 本（留填空 + 演示类 output 保留）✅ 发给学员
-├── utils/                  # 共享工具
+├── utils/                  # 共享工具（**与仓库根 utils/ 同源**）
 │   ├── llm_backend.py / embedding_backend.py / config.py  # 复用 3 天版
 │   ├── multi_agent.py      # ★ Multi-Agent 调度器
 │   ├── mcp_helpers.py      # ★ MCP server/client 简化封装
-│   └── observability.py    # ★ Langfuse trace 包装
+│   ├── observability.py    # ★ Langfuse trace 包装
+│   └── skills_helpers.py   # ★ Anthropic Skills 解析与路由
+│   # 同源策略：根 utils/ 是唯一源，本目录在 Linux/macOS 上是指向 ../../utils 的
+│   # symlink；Windows 默认权限下退化为拷贝（带 .utils_is_copy 标记）。
+│   # 修改时请改根 utils/ 然后跑 `python tools/restore_utils_symlink.py` 同步。
 ├── data/
 │   ├── custom_pretrain_corpus.txt  # Day 2 用
 │   ├── enterprise_docs/            # ★ 升级 Capstone 用多文档语料

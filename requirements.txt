@@ -99,3 +99,20 @@ pandas>=2.0.0
 #    - 推荐模型: Qwen/Qwen2.5-1.5B-Instruct (小型)
 #
 # =============================================================================
+
+# -----------------------------------------------------------------------------
+# Advanced 主题（可选 — Apps 5-8 / 5天版 Day4-5 用）
+# -----------------------------------------------------------------------------
+# 装这一段可以解锁：MCP 协议 / Anthropic Skills / LLMOps Langfuse 可观测性 / 高阶 RAG
+#
+# rank-bm25                     # BM25 sparse retrieval (Hybrid RAG 用)
+# langfuse>=2.0                 # LLMOps trace + dashboard (生产可观测)
+# opentelemetry-api             # OTEL trace 标准
+# opentelemetry-sdk
+# mcp>=0.9                      # Anthropic 官方 MCP SDK (需 Python 3.10+；本课程的 mcp_helpers 不依赖此包)
+# anthropic>=0.30               # 直接调 Claude API (用 Skills 时可选)
+#
+# 安装：
+#   pip install rank-bm25 langfuse opentelemetry-api opentelemetry-sdk
+#   pip install "sentence-transformers>=3.0"   # bge-reranker (Agentic RAG 用)
+# =============================================================================

@@ -1,0 +1,4 @@
+This directory is a copy of the repo root utils/.
+Update via:  python tools/restore_utils_symlink.py
+Delete this marker (and rerun the script with Developer Mode on)
+to upgrade to a symlink and avoid future drift.
