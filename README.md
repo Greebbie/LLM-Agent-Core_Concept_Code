@@ -442,43 +442,58 @@ setx OPENAI_API_KEY "sk-xxx"
 
 ```
 LLM-Agent-Core_Concept_Code/
-├── Ch0_Quick_Start/
-├── Ch1_Autograd/
-├── Ch2_Embedding/
-├── Ch3_Self_Attention/
-├── Ch4_Transformer_Block/
-├── Ch5_GPT_Assembly/
-├── Ch6_Tokenizer/
-├── Ch7_Pretraining/
-├── Ch8_SFT/
-├── Ch9_LoRA_Quantization/
-├── Ch10_DPO/
-├── Ch11_KV_Cache/
-├── Ch12_Agent_RAG/
-├── Custom_GPT_Training/
+├── Ch0_Quick_Start/ … Ch12_Agent_RAG/    # 主线 13 章（Phase 1-6）
+├── Custom_GPT_Training/                   # 路线 B：自建 GPT 全链路
 │   ├── custom_gpt.py
 │   ├── 01_Model_Assembly.ipynb
 │   ├── 02_Pretraining.ipynb
 │   ├── 03_SFT_Training.ipynb
 │   ├── 04_DPO_Training.ipynb
 │   └── 05_Evaluation.ipynb
-├── Applications/
+├── Applications/                          # Agent 实战 + 2026 工业栈
 │   ├── PREPARE_OLLAMA.ipynb
+│   ├── App0_Setup_Check.ipynb
 │   ├── App1_ReAct_Agent.ipynb
 │   ├── App2_RAG_System.ipynb
 │   ├── App3_Code_Agent.ipynb
-│   └── App4_Multi_Agent.ipynb
-├── Bonus_A_RLHF/
-├── Bonus_B_Evaluation/
-├── data/
-├── models/
-├── utils/
-│   ├── llm_backend.py
-│   ├── embedding_backend.py
-│   └── __init__.py
+│   ├── App4_Multi_Agent.ipynb
+│   ├── App5_MCP_Server.ipynb              # 真 stdio JSON-RPC + 权限层
+│   ├── App6_Skills_Pack.ipynb             # SKILL.md + progressive disclosure
+│   ├── App7_LLMOps.ipynb                  # @observe + Langfuse trace
+│   └── App8_Production_Capstone.ipynb     # Multi-Agent + MCP + RAG + LLMOps 合体
+├── Bonus_A_RLHF/                          # RLHF 全景
+├── Bonus_B_Evaluation/                    # 评测方法论
+├── utils/                                 # 共享工具（含 2026 工业栈 4 件套）
+│   ├── llm_backend.py / embedding_backend.py / config.py
+│   ├── multi_agent.py / mcp_helpers.py
+│   └── observability.py / skills_helpers.py
+├── data/                                  # 训练 / 评测数据
+│   ├── pretrain_corpus_zh.txt             # 6 MB 中文语料（Ch7 / Custom_02 推荐）
+│   ├── eval_zh_extended.jsonl             # 120 题扩展评估集（App8 / Bonus_B）
+│   ├── custom_sft_*.jsonl / custom_dpo_*.jsonl    # 自建 GPT 路线 B 数据
+│   ├── gpt2_sft_*.jsonl                   # GPT-2 路线 A 数据
+│   ├── _download_pretrain_corpus.py       # 中文 Wikipedia 抽样下载脚本
+│   ├── _build_eval_zh_extended.py         # 评估集构建脚本
+│   ├── _archive/                          # 归档：未被当前 notebook 引用
+│   └── README.md
+├── assets/
+│   ├── enterprise_ver2/                   # 3 天企业班（Day0-3，instructor + student）
+│   ├── enterprise_5days/                  # 5 天企业班（Day0-5，含 Day4-5 工业栈）
+│   │   ├── instructor/ student/           # 双版本
+│   │   ├── utils/                         # 与根 utils/ 同源（symlink/copy）
+│   │   ├── skills_demo/                   # 3 个完整 Skill 范例（可 fork）
+│   │   ├── mcp_server_demo/               # 100 行 stdio JSON-RPC server starter
+│   │   └── data/ enterprise_docs/
+│   └── fonts/
+├── teaching/                              # 讲师教案（Ch* / App* / CGT_* 配套）
+├── tools/                                 # 维护脚本（nb_lib + 同步器）
+├── docs/                                  # 架构图等参考文档
+├── models/                                # 训练产出 checkpoint（运行时生成）
 ├── requirements.txt
 └── README.md
 ```
+
+> **数据说明**：`data/pretrain_corpus_zh.txt` 与 `data/eval_zh_extended.jsonl` 是 codex 升级后用于教学演示的真实语料与评测集；首次运行 Ch7/Custom_02 前若文件不存在，跑 `python data/_download_pretrain_corpus.py` 自动构建。详见 [`data/README.md`](./data/README.md)。
 
 ---
 
