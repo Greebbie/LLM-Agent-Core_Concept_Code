@@ -25,11 +25,11 @@ sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "utils"))
 sys.path.insert(0, str(_root / "mcp_server_demo"))
 
-from config import setup
-from multi_agent import Message, MessageType, BaseAgent
-from mcp_helpers import EduMCPClient
-from embedding_backend import SimpleVectorStore
-from observability import observe
+from utils.config import setup
+from utils.multi_agent import Message, MessageType, BaseAgent
+from utils.mcp_helpers import EduMCPClient
+from utils.embedding_backend import SimpleVectorStore
+from utils.observability import observe  # canonical module paths so notebook + pipeline.py share the same module objects (observer singleton, etc.)
 
 
 env = setup()

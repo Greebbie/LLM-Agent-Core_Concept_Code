@@ -1,6 +1,12 @@
 # 5 天版构建说明（给维护者）
 
-学员只读 `README.md`。本文件给维护者：从 0 重建 5 天版的步骤。
+学员只读 `README.md`。本文件给维护者。
+
+> **历史说明**：早期 Batch 1–6 的批量生成脚本（`tools/batch5_day*.py`、`tools/build5d_day*.py`、
+> `tools/derive_student.py` 等）已经退役，11 本 instructor / student notebook 现在直接当作
+> source of truth 维护。需要重建脚本时从 git 历史 checkout 回来。当前 `tools/` 只保留两个
+> 仍在用的同步器：`restore_utils_symlink.py`（utils/）和 `sync_enterprise_assets.py`
+> （skills_demo + mcp_server_demo）。
 
 ---
 

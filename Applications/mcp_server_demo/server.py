@@ -21,8 +21,15 @@ import sys
 import json
 from pathlib import Path
 
-# Allow import of utils when running this file directly
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Walk up from this file to find the course/repo root (containing utils/ and data/)
+# so we work both in Applications/ (repo root 2 levels up) and in enterprise_5days/
+# (root 1 level up). Same pattern as skills_demo/capstone_assistant/pipeline.py.
+_root = Path(__file__).resolve().parent
+for _ in range(5):
+    if (_root / "utils").is_dir() and (_root / "data").is_dir():
+        break
+    _root = _root.parent
+sys.path.insert(0, str(_root))
 from utils.mcp_helpers import EduMCPServer, ToolDef, MCP_AVAILABLE
 
 

@@ -14,3 +14,8 @@ env/
 .DS_Store
 Thumbs.db
 /.codex_run_tmp
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example

@@ -19,7 +19,13 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Walk up to find course/repo root containing utils/ and data/.
+_root = Path(__file__).resolve().parent
+for _ in range(5):
+    if (_root / "utils").is_dir() and (_root / "data").is_dir():
+        break
+    _root = _root.parent
+sys.path.insert(0, str(_root))
 from utils.mcp_helpers import EduMCPClient, MCP_AVAILABLE
 
 

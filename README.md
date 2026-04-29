@@ -433,7 +433,7 @@ LLM-Agent-Core_Concept_Code/
 │   ├── _archive/                          # 归档：未被当前 notebook 引用
 │   └── README.md
 ├── teaching/                              # 讲师教案（Ch* / App* / CGT_* 配套）
-├── tools/                                 # 维护脚本（nb_lib + 同步器）
+├── tools/                                 # 维护脚本（utils + skills_demo / mcp_server_demo 同步器）
 ├── docs/                                  # 架构图等参考文档
 ├── models/                                # 训练产出 checkpoint（运行时生成）
 ├── requirements.txt

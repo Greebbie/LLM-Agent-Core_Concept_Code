@@ -167,14 +167,12 @@ _MAX_REPR_CHARS = 2000
 
 
 def _safe_repr(obj: Any, limit: int = _MAX_REPR_CHARS) -> str:
-    """对单个对象做安全字符串化：小对象 str()，大对象只取 type + 形状提示。
+    """对单个对象做安全字符串化：小对象 str()，大对象用 type + 形状提示替代。
 
-    Why these specific exceptions:
-    - ``len()`` may raise ``TypeError`` (no ``__len__``) — that's the only legitimate
-      failure here, so we narrow to ``TypeError`` and skip the size-shortcut.
-    - ``str()`` may raise either ``TypeError`` (broken ``__str__``) or ``ValueError``
-      (e.g. numpy throws on ambiguous truth-value calls). We swallow both and emit
-      a stable placeholder so tracing never aborts the user's pipeline.
+    异常处理策略：
+    - len() 抛 TypeError（对象没 __len__）→ 跳过 size 快路径
+    - str() 抛 TypeError / ValueError（坏 __str__ 或 numpy 真值歧义等）→ 返回
+      稳定占位，避免 tracing 把用户 pipeline 一并打断
     """
     type_name = type(obj).__name__
     # 字符串和数字直接处理

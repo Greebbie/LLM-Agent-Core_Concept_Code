@@ -57,8 +57,7 @@ This decoupling means:
 ```bash
 # In repo root
 python -c "
-import sys; sys.path.insert(0, 'utils')
-from skills_helpers import discover_skills, validate_skill
+from utils.skills_helpers import discover_skills, validate_skill
 for s in discover_skills('Applications/skills_demo'):
     v = validate_skill(s.skill_dir)
     print(f'{s.name}: ok={v[\"ok\"]}  desc=\"{s.description[:60]}...\"')
