@@ -68,7 +68,7 @@ Ch12 (前置)
                         └────────────────────┘
 ```
 
-App1–App4 是"基础 Agent 4 项"，App5–App8 是"2026 工业栈 4 项"。不同学习目标对应不同最短路径——见末尾的"读这门课的最短路径"表格。
+App1–App8 覆盖 ReAct / RAG / Code / Multi-Agent / MCP / Skills / LLMOps / Capstone。不同学习目标对应不同最短路径——见末尾的"读这门课的最短路径"表格。
 
 ---
 
@@ -89,28 +89,10 @@ App1–App4 是"基础 Agent 4 项"，App5–App8 是"2026 工业栈 4 项"。�
 
 ---
 
-## 与 5 天企业版 (`assets/enterprise_5days/`) 的关系
-
-`enterprise_5days/utils/` 与本仓库根 `utils/` **共享同一份代码**：
-
-- Linux/macOS：`assets/enterprise_5days/utils/` 是指向 `../../utils/` 的 symlink
-- Windows 默认权限下：自动 fallback 为定期同步的拷贝（含 `.utils_is_copy` 标记）
-
-任何 utils 改动都做在根 `utils/`，然后跑：
-
-```bash
-python tools/restore_utils_symlink.py
-```
-
-让 5days 那侧重新对齐。两侧 import 的代码永远是同一份。
-
----
-
 ## 读这门课的最短路径
 
 | 你的目标 | 推荐路径 |
 |---|---|
 | 只想跑通 Agent | App0 → Ch12 → App1 → App2 → App4 |
-| 想理解 LLM 工业栈（2026） | App0 → App1–App4 → App5 → App6 → App7 → App8 |
+| 想理解生产级 Agent 栈 | App0 → App1–App4 → App5 → App6 → App7 → App8 |
 | 学院派完整旅程 | Ch01–Ch12 → App1–App8 |
-| 5 天集训复刻 | `assets/enterprise_5days/student/` Day0 → Day5 |

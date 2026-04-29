@@ -11,7 +11,7 @@ This folder contains focused, file-based datasets for both training routes.
 - eval_zh_extended.jsonl
 - 120 cases for App8 / Bonus_B style batch evaluation:
   HR, Tech, Product, MCP, OOD, Direct, and Chinese common-knowledge sanity checks.
-- The tiny 10-case file under `assets/enterprise_5days/` is kept for fast classroom demos.
+- A small companion file `eval_dataset.jsonl` (≈10 cases) is provided for App8 fast demos.
 
 ## Custom GPT Pretrain Corpus
 - pretrain_corpus_zh.txt

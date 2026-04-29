@@ -241,7 +241,7 @@ graph TD
 |---|---|---|---|
 | [**Ch12**](./Ch12_Agent_RAG/Ch12_Agent_RAG.ipynb) | Agent & RAG | “能推理/能调用工具/能检索”的 Agent 原型 | ReAct、Tool Use、RAG pipeline |
 
-> **2026 工业栈（Multi-Agent / MCP / Skills / LLMOps）的概念讲解与工程实战合并在 [Applications/](#-applicationsagent-实战案例重点)** 里：每个 App 的开头都先把概念、设计动机、数学打底讲清楚，再上代码。这是为了避免读者在"概念章"和"实战章"两个入口之间来回切换。
+> **进阶主题（Multi-Agent / MCP / Skills / LLMOps）的概念讲解与工程实战合并在 [Applications/](#-applicationsagent-实战案例重点)** 里：每个 App 的开头都先把概念、设计动机、数学打底讲清楚，再上代码。这是为了避免读者在"概念章"和"实战章"两个入口之间来回切换。
 
 ---
 
@@ -249,47 +249,31 @@ graph TD
 
 本仓库落地的核心：**基于真实 LLM 后端的可运行 Agent 应用**（优先支持本地 Ollama，同时保留 OpenAI/HF/vLLM 等扩展）。
 
-### 统一后端抽象（可复用）
+### 统一工程组件（utils/）
 
-- LLM 后端抽象：`utils/llm_backend.py`（OpenAI / Ollama / HuggingFace / vLLM）
-- Embedding 抽象：`utils/embedding_backend.py`（SentenceTransformers / OpenAI / HuggingFace）
-- **Multi-Agent 调度器**：`utils/multi_agent.py`（BaseAgent / Orchestrator: Hierarchical/Debate/Handoff / CircuitBreaker）★
-- **MCP 协议**：`utils/mcp_helpers.py`（EduMCPServer/Client + tool_from_function，含真 stdio JSON-RPC subprocess）★
-- **LLMOps 可观测性**：`utils/observability.py`（@observe + Langfuse 自动检测 + 自动 token 估算）★
-- **Anthropic Skills**：`utils/skills_helpers.py`（discover/match/load progressive）★
+- **LLM 后端抽象**：`utils/llm_backend.py`（OpenAI / Ollama / HuggingFace / vLLM）
+- **Embedding 抽象**：`utils/embedding_backend.py`（SentenceTransformers / OpenAI / HuggingFace）
+- **Multi-Agent 调度器**：`utils/multi_agent.py`（BaseAgent / Hierarchical / Debate / Handoff / CircuitBreaker）
+- **MCP 协议封装**：`utils/mcp_helpers.py`（EduMCPServer/Client + tool_from_function，含真 stdio JSON-RPC subprocess）
+- **可观测性**：`utils/observability.py`（@observe + Langfuse 自动检测 + 自动 token 估算）
+- **Skills 解析**：`utils/skills_helpers.py`（discover / match / progressive load）
 
-★ = 2026 工业栈，源自 5 天企业版反哺
+### 应用清单（可直接运行）
 
-### 应用列表（可直接运行）
-
-#### 基础 Agent（4 项，已含 Production 加固）
-
-| 应用 | 主题 | 基础能力 | 加固模块（反哺自 5 天版） |
-|---|---|---|---|
-| [**PREPARE**](./Applications/PREPARE_OLLAMA.ipynb) | Ollama Setup | 本地模型下载/连通性检查 | — |
-| [**App0**](./Applications/App0_Setup_Check.ipynb) | 环境自检（Setup Check） | Python / utils / 核心依赖 / 可选 SDK / 数据资产 5 步打钩 + `verify_environment()` 综合判断 | — |
-| [**App1**](./Applications/App1_ReAct_Agent.ipynb) | ReAct Agent | 推理循环 + 动态工具选择 | + observability + CircuitBreaker + `verify_app1()` |
-| [**App2**](./Applications/App2_RAG_System.ipynb) | RAG System | 分块/检索/重排/注入 | + Self-RAG / CRAG / Hybrid+RRF / Reranker / MMR + `verify_app2()` |
-| [**App3**](./Applications/App3_Code_Agent.ipynb) | Code Agent | 代码生成 + 沙箱执行 | + MCP-style tool 包装 + 权限层 + `verify_app3()` |
-| [**App4**](./Applications/App4_Multi_Agent.ipynb) | Multi-Agent | 角色分工 + 消息协议 | + Handoff + CircuitBreaker + `verify_app4()` |
-
-#### 2026 工业栈（4 项，5 天版浓缩）
-
-| 应用 | 主题 | 关键能力 |
+| 应用 | 主题 | 关键能力 / 涵盖技术 |
 |---|---|---|
-| [**App5**](./Applications/App5_MCP_Server.ipynb) | MCP Server 实战 | 真 stdio JSON-RPC subprocess + Tools/Resources/Prompts + 权限层 |
-| [**App6**](./Applications/App6_Skills_Pack.ipynb) | Anthropic Skills | 写 SKILL.md + helper.py + progressive disclosure + Skills × MCP 集成 |
-| [**App7**](./Applications/App7_LLMOps.ipynb) | LLMOps 可观测性 | @observe + 嵌套 span tree + token 估算 + Langfuse 集成路径 |
-| [**App8**](./Applications/App8_Production_Capstone.ipynb) | Production Capstone | Multi-Agent + MCP + Agentic RAG + LLMOps **5 天合体** |
+| [**PREPARE**](./Applications/PREPARE_OLLAMA.ipynb) | Ollama Setup | 本地模型下载 / 连通性检查 |
+| [**App0**](./Applications/App0_Setup_Check.ipynb) | 环境自检 | Python / utils / 核心依赖 / 数据资产 5 步打钩 + `verify_environment()` |
+| [**App1**](./Applications/App1_ReAct_Agent.ipynb) | ReAct Agent | 推理-行动循环 + 工具选择 + observability + CircuitBreaker + `verify_app1()` |
+| [**App2**](./Applications/App2_RAG_System.ipynb) | RAG System | 分块/检索/重排/注入 + Self-RAG / CRAG / Hybrid (Vec+BM25+RRF) / Cross-Encoder Reranker / MMR + `verify_app2()` |
+| [**App3**](./Applications/App3_Code_Agent.ipynb) | Code Agent | 代码生成 + 沙箱执行 + MCP-style tool 包装 + 权限层 + `verify_app3()` |
+| [**App4**](./Applications/App4_Multi_Agent.ipynb) | Multi-Agent | 角色分工 + Hierarchical / Debate / Handoff + CircuitBreaker + `verify_app4()` |
+| [**App5**](./Applications/App5_MCP_Server.ipynb) | MCP Server | 真 stdio JSON-RPC subprocess + Tools / Resources / Prompts + 权限层（配套 [`Applications/mcp_server_demo/`](./Applications/mcp_server_demo/)） |
+| [**App6**](./Applications/App6_Skills_Pack.ipynb) | Anthropic Skills | 写 SKILL.md + helper.py + progressive disclosure + Skills × MCP 集成（配套 [`Applications/skills_demo/`](./Applications/skills_demo/) 三个完整范例） |
+| [**App7**](./Applications/App7_LLMOps.ipynb) | LLMOps 可观测性 | @observe + 嵌套 span tree + token 估算 + Langfuse 集成 |
+| [**App8**](./Applications/App8_Production_Capstone.ipynb) | Production Capstone | Multi-Agent + MCP + Agentic RAG + LLMOps 综合集成（配套 [`Applications/skills_demo/capstone_assistant/`](./Applications/skills_demo/capstone_assistant/) + [`data/eval_dataset.jsonl`](./data/eval_dataset.jsonl)） |
 
-#### 学习路径（4 条）
-
-```
-路径 A · 基础速通：    PREPARE → App1 → App2 → App3 → App4
-路径 B · 工业栈深入：  路径 A → App5 → App6 → App7 → App8
-路径 C · 3 天企业班：  assets/enterprise_ver2/ (Day0-3, 7 nb)
-路径 D · 5 天企业班：  assets/enterprise_5days/ (Day0-5, 11 nb, 含 Day4-5 全套工业栈 + 升级 Capstone)
-```
+> 路径建议：先 `PREPARE` → `App0` 自检；想最快跑通从 `App1` 开始；想通览全部主题就 App1 → App8 顺过去。
 
 ---
 
@@ -299,49 +283,6 @@ graph TD
 |---|---|---|
 | [**Bonus A**](./Bonus_A_RLHF/Bonus_A_RLHF.ipynb) | RLHF 全景 | Reward Model / PPO 思路，理解 RLHF vs DPO 的关系 |
 | [**Bonus B**](./Bonus_B_Evaluation/Bonus_B_Evaluation.ipynb) | 评测方法论 | PPL、下游任务、LLM-as-Judge 的评测框架 |
-
----
-
-## 🚀 Advanced 主题（2026 工业级 Agent 栈）
-
-围绕 **MCP 协议 / Anthropic Skills / LLMOps 可观测性 / Agentic RAG / Multi-Agent 协作** 的进阶内容，源自 5 天企业版的精华，已沉淀到顶层 `utils/` 与 `Applications/`。
-
-### 顶层共享工具（`utils/`）
-
-| 模块 | 提供 | 依赖 |
-|---|---|---|
-| [`utils/multi_agent.py`](./utils/multi_agent.py) | `BaseAgent` / `Orchestrator` (Hierarchical/Debate/Handoff) / `CircuitBreaker` | 无外部依赖 |
-| [`utils/mcp_helpers.py`](./utils/mcp_helpers.py) | `EduMCPServer/Client`, `ToolDef/ResourceDef/PromptDef`, `tool_from_function`（含真 stdio JSON-RPC subprocess 支持，无需官方 mcp 包） | 无外部依赖 |
-| [`utils/observability.py`](./utils/observability.py) | `@observe` 装饰器, `MockObserver`（含自动 token 估算）, Langfuse 后端自动检测 | `langfuse` 可选 |
-| [`utils/skills_helpers.py`](./utils/skills_helpers.py) | `parse_skill_md`, `validate_skill`, `discover_skills`, `match_skill_for_query`, `load_skill_progressive` | 无外部依赖 |
-
-### 企业班教材（`assets/`）
-
-| 课程 | 入口 | 适合 |
-|---|---|---|
-| **3 天精简版** | [`assets/enterprise_ver2/`](./assets/enterprise_ver2/) | 企业班 / 3 天 6 session / 含 instructor + student 双版本 |
-| **5 天扩张版** | [`assets/enterprise_5days/`](./assets/enterprise_5days/) | 同上 + Day 4-5 加 Multi-Agent / **MCP 协议** / **Agentic RAG** / **LLMOps 可观测性** / 升级 Capstone |
-
-### 完整 5 天版才有的主题
-
-- **Multi-Agent 3 模式**：Hierarchical (Planner→Worker→Reviewer)、Debate (多 Agent 投标 + Judge)、Handoff (OpenAI Swarm 模式) + CircuitBreaker 容错
-- **MCP (Model Context Protocol)**：Anthropic 推的跨厂工具协议，含真 stdio JSON-RPC subprocess demo（看到完整 `initialize / tools/list / tools/call / shutdown` 协议帧）
-- **Anthropic Skills**：可打包内化能力的标准格式 (SKILL.md + helper.py + reference/)，含 progressive disclosure 演示与 Skills × MCP 集成模式；`assets/enterprise_5days/skills_demo/` 内 3 个完整可读例子
-- **Agentic RAG**：Self-RAG (自反思) / CRAG (纠正性) / Hybrid (Vector+BM25+RRF) / Cross-Encoder Reranker / MMR 多样性
-- **LLMOps**：Langfuse `@observe` trace + 父子 span / 自动 token 估算 / 跨 Agent trace propagation
-
-### Apps 升级（`Applications/`）
-
-部分 Apps 已升级吸收以上能力：
-- App1 ReAct + observability + CircuitBreaker
-- App2 RAG + 5 advanced 模式 (Self-RAG / CRAG / Hybrid / Reranker / MMR)
-- App3 Code + MCP-style tool 包装
-- App4 Multi-Agent + CircuitBreaker + Handoff
-
-新增独立教程（5days 浓缩版）：
-- App5_MCP_Server / App6_Skills_Pack / App7_LLMOps / App8_Production_Capstone
-
-可选依赖见 `requirements.txt` 末尾的 "Advanced 主题" 段。
 
 ---
 
@@ -462,7 +403,7 @@ LLM-Agent-Core_Concept_Code/
 │   ├── 03_SFT_Training.ipynb
 │   ├── 04_DPO_Training.ipynb
 │   └── 05_Evaluation.ipynb
-├── Applications/                          # Agent 实战 + 2026 工业栈
+├── Applications/                          # Agent 实战与系统集成
 │   ├── PREPARE_OLLAMA.ipynb
 │   ├── App0_Setup_Check.ipynb
 │   ├── App1_ReAct_Agent.ipynb
@@ -472,31 +413,25 @@ LLM-Agent-Core_Concept_Code/
 │   ├── App5_MCP_Server.ipynb              # 真 stdio JSON-RPC + 权限层
 │   ├── App6_Skills_Pack.ipynb             # SKILL.md + progressive disclosure
 │   ├── App7_LLMOps.ipynb                  # @observe + Langfuse trace
-│   └── App8_Production_Capstone.ipynb     # Multi-Agent + MCP + RAG + LLMOps 合体
+│   ├── App8_Production_Capstone.ipynb     # Multi-Agent + MCP + RAG + LLMOps 合体
+│   ├── mcp_server_demo/                   # 100 行 stdio JSON-RPC server starter（App5 配套）
+│   └── skills_demo/                       # 3 个完整 Skill 范例（App6/App8 配套）
 ├── Bonus_A_RLHF/                          # RLHF 全景
 ├── Bonus_B_Evaluation/                    # 评测方法论
-├── utils/                                 # 共享工具（含 2026 工业栈 4 件套）
+├── utils/                                 # 共享工程组件
 │   ├── llm_backend.py / embedding_backend.py / config.py
 │   ├── multi_agent.py / mcp_helpers.py
 │   └── observability.py / skills_helpers.py
 ├── data/                                  # 训练 / 评测数据
 │   ├── pretrain_corpus_zh.txt             # 6 MB 中文语料（Ch7 / Custom_02 推荐）
 │   ├── eval_zh_extended.jsonl             # 120 题扩展评估集（App8 / Bonus_B）
+│   ├── eval_dataset.jsonl                 # Capstone 评测集（App8 配套）
 │   ├── custom_sft_*.jsonl / custom_dpo_*.jsonl    # 自建 GPT 路线 B 数据
 │   ├── gpt2_sft_*.jsonl                   # GPT-2 路线 A 数据
 │   ├── _download_pretrain_corpus.py       # 中文 Wikipedia 抽样下载脚本
 │   ├── _build_eval_zh_extended.py         # 评估集构建脚本
 │   ├── _archive/                          # 归档：未被当前 notebook 引用
 │   └── README.md
-├── assets/
-│   ├── enterprise_ver2/                   # 3 天企业班（Day0-3，instructor + student）
-│   ├── enterprise_5days/                  # 5 天企业班（Day0-5，含 Day4-5 工业栈）
-│   │   ├── instructor/ student/           # 双版本
-│   │   ├── utils/                         # 与根 utils/ 同源（symlink/copy）
-│   │   ├── skills_demo/                   # 3 个完整 Skill 范例（可 fork）
-│   │   ├── mcp_server_demo/               # 100 行 stdio JSON-RPC server starter
-│   │   └── data/ enterprise_docs/
-│   └── fonts/
 ├── teaching/                              # 讲师教案（Ch* / App* / CGT_* 配套）
 ├── tools/                                 # 维护脚本（nb_lib + 同步器）
 ├── docs/                                  # 架构图等参考文档
