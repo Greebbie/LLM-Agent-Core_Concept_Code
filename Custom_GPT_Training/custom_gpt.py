@@ -6,12 +6,12 @@ designed to be small enough to train on consumer hardware (CPU or low-end GPU).
 
 Architecture:
 - Vocabulary size: 5000 (small, efficient tokenizer)
-- Model dimension: 384
-- Attention heads: 6
-- Layers: 6
-- FFN dimension: 1536
-- Max sequence length: 256
-- Total parameters: ~12.6M
+- Model dimension: 192
+- Attention heads: 4
+- Layers: 4
+- FFN dimension: 512
+- Max sequence length: 128
+- Total parameters: ~2.7M
 
 Usage:
     from custom_gpt import CustomGPT, SimpleTokenizer, GPTConfig
@@ -40,11 +40,11 @@ import pickle
 class GPTConfig:
     """Configuration for Custom GPT Model."""
     vocab_size: int = 5000
-    max_seq_len: int = 256
-    d_model: int = 384
-    n_heads: int = 6
-    n_layers: int = 6
-    d_ff: int = 1536
+    max_seq_len: int = 128
+    d_model: int = 192
+    n_heads: int = 4
+    n_layers: int = 4
+    d_ff: int = 512
     dropout: float = 0.1
     layer_norm_eps: float = 1e-5
 
