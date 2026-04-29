@@ -27,9 +27,33 @@
 
 import os
 import json
+import time
+import random
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, Generator
+from typing import List, Dict, Any, Optional, Generator, Callable
 from dataclasses import dataclass
+
+
+def _retry_on_429(func: Callable, *, max_retries: int = 6, base_delay: float = 8.0):
+    """Call func() and retry on RateLimitError / 429 with exponential backoff (jittered).
+
+    DashScope free-tier limit is per-minute, so we wait ~10s, 20s, 40s, 60s capped, 60s, 60s.
+    """
+    try:
+        from openai import RateLimitError
+    except ImportError:
+        RateLimitError = None  # type: ignore
+
+    for attempt in range(max_retries + 1):
+        try:
+            return func()
+        except Exception as exc:  # noqa: BLE001
+            is_rate = (RateLimitError is not None and isinstance(exc, RateLimitError)) or "429" in str(exc) or "rate" in str(exc).lower()
+            if not is_rate or attempt == max_retries:
+                raise
+            delay = min(60.0, base_delay * (2 ** attempt)) + random.uniform(0, 2.0)
+            time.sleep(delay)
+    return None  # unreachable
 
 @dataclass
 class LLMConfig:
@@ -99,13 +123,15 @@ class OpenAIBackend(BaseLLMBackend):
         )
 
     def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        response = self.client.chat.completions.create(
-            model=self.config.model,
-            messages=messages,
-            temperature=kwargs.get("temperature", self.config.temperature),
-            max_tokens=kwargs.get("max_tokens", self.config.max_tokens),
-            top_p=kwargs.get("top_p", self.config.top_p),
-        )
+        def _call():
+            return self.client.chat.completions.create(
+                model=self.config.model,
+                messages=messages,
+                temperature=kwargs.get("temperature", self.config.temperature),
+                max_tokens=kwargs.get("max_tokens", self.config.max_tokens),
+                top_p=kwargs.get("top_p", self.config.top_p),
+            )
+        response = _retry_on_429(_call)
         return response.choices[0].message.content
 
     def generate(self, prompt: str, **kwargs) -> str:

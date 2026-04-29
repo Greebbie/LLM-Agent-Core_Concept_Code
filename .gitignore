@@ -13,3 +13,4 @@ env/
 
 .DS_Store
 Thumbs.db
+/.codex_run_tmp

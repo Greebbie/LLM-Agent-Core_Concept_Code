@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Performs a structured code review of Python changes — runs ruff for style, mypy for types, then summarizes findings using a checklist. Use when the user asks to review, audit, or check code quality.
+description: 对 Python 代码或 PR 做结构化审查：运行 ruff/mypy，并按 checklist 输出阻塞问题、应改问题和建议。Use when the user asks to review, audit, or check code quality.
 allowed-tools: [bash, read_file]
 version: "0.2"
 ---

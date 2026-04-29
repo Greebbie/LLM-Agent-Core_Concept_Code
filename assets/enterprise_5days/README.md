@@ -14,7 +14,7 @@
 ```
 enterprise_5days/
 ├── instructor/             # 讲师版 11 本（含答案 + 内嵌讲课提示 + 全 cell output）⚠️ 不要群发学员
-├── student/                # 学员版 11 本（留填空 + 演示类 output 保留）✅ 发给学员
+├── student/                # 学员版 11 本（留填空，outputs 已清空，课堂现场运行生成）✅ 发给学员
 ├── utils/                  # 共享工具（**与仓库根 utils/ 同源**）
 │   ├── llm_backend.py / embedding_backend.py / config.py  # 复用 3 天版
 │   ├── multi_agent.py      # ★ Multi-Agent 调度器
@@ -64,8 +64,13 @@ pip install -r requirements.txt   # 装 mcp / langfuse / rank-bm25 等新依赖
 
 ```bash
 cp .env.example .env
-# 编辑 .env 填 DASHSCOPE_API_KEY；如要做 Day 5 LLMOps 也填 LANGFUSE_*
+# 编辑 .env 填 DASHSCOPE_API_KEY；课堂默认模型是 qwen-plus + text-embedding-v3
+# 如要做 Day 5 LLMOps，再填 LANGFUSE_*
 ```
+
+也可以直接运行 `Day0_环境配置与测试.ipynb` 的 Step 4，只改一行 `DASHSCOPE_API_KEY = ""`。后续 notebook 都会自动读取 `.env`，不需要重复填写。
+
+如果测试号在 `qwen-plus` 上撞到 free-tier 限额，可以把 `.env` 里的 `LLM_MODEL` 改成 `qwen-plus-2025-01-25`（固定快照），其它都不用改。
 
 ### 3. 跑 Day0 验证
 
@@ -80,8 +85,8 @@ jupyter lab instructor/Day0_环境配置与测试.ipynb
 ### Day 4 上午 — Multi-Agent 协作
 3 大模式：**Hierarchical**（Planner→Worker→Reviewer）/ **Debate**（多 Agent 投票）/ **Handoff**（OpenAI Swarm 模式）。素材基于 `Applications/App4_Multi_Agent.ipynb` 拓展，4 个【基础+进阶+verify】练习。
 
-### Day 4 下午 — MCP (Model Context Protocol)
-Anthropic 推的跨厂工具协议，类比 USB-C。覆盖 Tools / Resources / Prompts 三件套，**学员产出 1 个能跑的 `mcp_server_demo/` 项目**。
+### Day 4 下午 — MCP (Model Context Protocol) + Anthropic Skills
+Anthropic 推的跨厂工具协议，类比 USB-C。覆盖 Tools / Resources / Prompts 三件套，**学员产出 1 个能跑的 `mcp_server_demo/` 项目**。Skills 部分讲 SKILL.md 格式 + progressive disclosure 三层加载 + Skills × MCP 集成模式，对应 `skills_demo/` 下三个可 fork 的范例。
 
 ### Day 5 上午 — Agentic RAG
 基础 RAG 升级：**Self-RAG**（自反思）/ **CRAG**（错误修正）/ **Hybrid Retrieval**（Vector+BM25+RRF）/ **Cross-Encoder Reranker**（bge-reranker）/ **MMR** 多样性去重。

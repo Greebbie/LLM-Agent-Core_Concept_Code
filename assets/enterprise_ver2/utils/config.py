@@ -31,24 +31,46 @@ if not os.path.exists(os.path.dirname(_CONFIG_FILE)):
     _CONFIG_FILE = os.path.join(os.getcwd(), ".env")
 
 
-def _load_env_file(path=None):
-    """从 .env 文件加载环境变量"""
+def _load_env_file(path=None, verbose: bool = False):
+    """从 .env 文件加载环境变量。
+
+    **优先级**：.env 文件 > 系统环境变量（与 dotenv 标准行为一致）。
+    如果系统已设某个 key，.env 中同名 key 会**覆盖**之（不再用 setdefault）。
+    多个候选 .env 时只用第一个找到的；若发现多个，verbose 模式会警告。
+
+    Args:
+        path: 显式 .env 路径
+        verbose: True 时打印加载信息 + 多 .env 警告
+    """
     path = path or _CONFIG_FILE
-    # 也尝试当前目录
     candidates = [path, os.path.join(os.getcwd(), ".env"), ".env"]
-    for p in candidates:
-        if os.path.exists(p):
-            with open(p, encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#") and "=" in line:
-                        key, _, value = line.partition("=")
-                        key = key.strip()
-                        value = value.strip().strip('"').strip("'")
-                        if key and value:
-                            os.environ.setdefault(key, value)
-            return p
-    return None
+    # 去重保序
+    seen = set()
+    unique_candidates = []
+    for c in candidates:
+        ac = os.path.abspath(c) if c else c
+        if ac not in seen:
+            seen.add(ac)
+            unique_candidates.append(c)
+    found_paths = [p for p in unique_candidates if p and os.path.exists(p)]
+    if not found_paths:
+        return None
+    if len(found_paths) > 1 and verbose:
+        print(f"⚠ 发现 {len(found_paths)} 个 .env 文件，只用第一个: {found_paths[0]}")
+        for extra in found_paths[1:]:
+            print(f"  (忽略: {extra})")
+    chosen = found_paths[0]
+    with open(chosen, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and value:
+                    # .env 优先（覆盖系统 env）— 学员/讲师改 .env 应该立即生效
+                    os.environ[key] = value
+    return chosen
 
 
 def save_config(api_key=None, llm_backend=None, llm_model=None,

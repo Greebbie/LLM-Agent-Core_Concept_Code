@@ -1,6 +1,6 @@
 ---
 name: enterprise-knowledge-assistant
-description: Answers employee questions about HR policy, technical APIs, product info, and runs internal queries. Routes to RAG (knowledge), MCP tools (orders/inventory), or direct LLM (chitchat) using a multi-agent planner. Includes Langfuse observability. Use when the user asks anything about company internals — policy, products, orders, or general help.
+description: 企业知识助手：回答 HR 政策、产品、技术 API、订单/库存等内部问题，并在 RAG、MCP tools、direct LLM 之间自动路由。Use for company-internal policy/product/API/order questions.
 allowed-tools: [mcp__enterprise-demo__query_order, mcp__enterprise-demo__check_inventory, mcp__enterprise-demo__send_notification]
 model: claude-3-5-sonnet
 version: "1.0"

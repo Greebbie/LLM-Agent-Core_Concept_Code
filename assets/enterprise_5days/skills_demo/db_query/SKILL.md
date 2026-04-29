@@ -1,6 +1,6 @@
 ---
 name: db-query
-description: Helps the user query the company's order / inventory database via the enterprise MCP server. Translates natural language questions into the appropriate MCP tool call. Use when the user asks about orders, inventory, stock, or wants to send notifications.
+description: 把订单、库存、通知类自然语言问题路由到 enterprise MCP server。Use when the user asks about ORD/SKU/order status/inventory/stock or wants to send notifications.
 allowed-tools: [mcp__enterprise-demo__query_order, mcp__enterprise-demo__check_inventory, mcp__enterprise-demo__send_notification]
 version: "0.1"
 ---

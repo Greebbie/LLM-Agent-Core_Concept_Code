@@ -422,6 +422,18 @@ export OPENAI_API_KEY="sk-xxx"
 setx OPENAI_API_KEY "sk-xxx"
 ```
 
+**DashScope（阿里云通义，国内默认）**
+
+```bash
+# macOS/Linux
+export DASHSCOPE_API_KEY="sk-xxx"
+
+# Windows (PowerShell)
+setx DASHSCOPE_API_KEY "sk-xxx"
+```
+
+模型名走 env var：默认 `LLM_MODEL=qwen-plus`、`EMBEDDING_MODEL=text-embedding-v3`，不用改。如果测试号在 `qwen-plus` 上撞到 free-tier 限额，把 `LLM_MODEL` 改成固定快照 `qwen-plus-2025-01-25` 即可，notebook 不动。
+
 ---
 
 ## 🧰 模型与技术栈

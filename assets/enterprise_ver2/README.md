@@ -9,7 +9,7 @@
 ```
 enterprise_ver2/
 ├── instructor/      # 讲师版（含解答 + 内嵌讲课提示 + 全 cell output）⚠️ 不要群发学员
-├── student/         # 学员版（留填空 + 演示类 output 保留）✅ 发给学员
+├── student/         # 学员版（留填空，outputs 已清空，课堂现场运行生成）✅ 发给学员
 ├── utils/           # 共享工具：统一 LLM/Embedding 后端入口
 ├── data/            # 教学数据
 ├── fonts/           # 中文字体（图表渲染）
@@ -40,6 +40,10 @@ pip install -r requirements.txt
 cp .env.example .env
 # 编辑 .env，填入你的 API key（推荐 DashScope，国内稳定快速）
 ```
+
+也可以直接运行 `Day0_环境配置与测试.ipynb` 的 Step 4，只改一行 `DASHSCOPE_API_KEY = ""`。课堂默认模型是 `qwen-plus` + `text-embedding-v3`，一般不用改模型名。
+
+如果测试号在 `qwen-plus` 上撞到 free-tier 限额，把 `.env` 里的 `LLM_MODEL` 改成 `qwen-plus-2025-01-25`（固定快照）即可。
 
 ### 3. 跑 Day0 验证
 

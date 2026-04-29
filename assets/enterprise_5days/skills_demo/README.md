@@ -2,6 +2,8 @@
 
 This folder contains **3 example Anthropic Skills** used in Day 4 下午 (Skills 90min) and Day 5 下午 (Capstone-as-Skill 收尾).
 
+课堂上请先把 Skill 理解成一个普通文件夹：`SKILL.md` 负责告诉模型“什么时候用、按什么流程做”，`helper.py` 负责可执行代码，`reference/` 放按需加载的资料。初学者先改 `SKILL.md`，不要一上来改 helper。
+
 ```
 skills_demo/
 ├── code_review/             # Day4 下午 练习 1 用 — 简单 skill 示例
@@ -18,6 +20,18 @@ Each skill folder contains:
 - **`SKILL.md`** — required. YAML frontmatter (name + description) + body (instructions)
 - **`*.py`** — optional helper scripts Claude can call
 - **`reference/`** — optional. Docs loaded on-demand (progressive disclosure)
+
+## 学员最小改造路径
+
+1. 复制 `code_review/` 或 `db_query/` 文件夹，改成自己的 skill 名字。
+2. 只改 `SKILL.md` 三处：
+   - `name`: 短横线命名，如 `meeting-notes`
+   - `description`: 一句话写清“什么时候触发”，这是路由依据
+   - `Workflow`: 3-5 步，写给模型照着做
+3. 跑 `validate_skill()` 看格式是否通过。
+4. 跑 `match_skill_for_query()` 用 3-5 条真实中文 query 测路由准不准。
+
+`description` 写得越具体，Qwen/DashScope 路由越稳。不要写“AI 助手”这种泛描述，要写“用于会议纪要、提取 action items、总结决策”。
 
 ## How a Skill is invoked
 
