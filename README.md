@@ -352,7 +352,7 @@ jupyter lab
 # or: jupyter notebook
 ```
 
-### 6) Agent 后端配置
+### 6) Agent 后端配置 （推荐使用DashScope千问的api key）
 
 **Ollama（推荐本地免费跑）**
 
