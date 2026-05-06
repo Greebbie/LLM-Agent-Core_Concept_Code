@@ -1,8 +1,8 @@
-"""Demo MCP-style server — a real subprocess-runnable example.
+"""Demo MCP-style server - a real subprocess-runnable example.
 
-This server speaks **JSON-RPC over stdio** — the same transport pattern
+This server speaks **JSON-RPC over stdio** - the same transport pattern
 official MCP servers use. We don't rely on the `mcp` Python SDK (it needs
-Python 3.10+) so we can run on the course's 3.9 conda env. The wire protocol
+Python 3.10+) so we can run on the recommended conda env. The wire protocol
 is a faithful subset (initialize / tools/list / tools/call), enough for
 learners to see how a real MCP client/server pair looks.
 
@@ -12,14 +12,19 @@ Three modes:
     (no args)                    # 自动：装了 mcp 走 FastMCP，否则 stdio
 
 Exposes 3 enterprise-style tools:
-- query_order(order_id)        — look up order status
-- check_inventory(sku)         — look up stock
-- send_notification(user_id, message)  — mock send
+- query_order(order_id)        - look up order status
+- check_inventory(sku)         - look up stock
+- send_notification(user_id, message)  - mock send
 """
 from __future__ import annotations
 import sys
 import json
 from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # Walk up from this file to find the course/repo root (containing utils/ and data/)
 # so we work both in Applications/ (repo root 2 levels up) and in enterprise_5days/
@@ -33,7 +38,7 @@ sys.path.insert(0, str(_root))
 from utils.mcp_helpers import EduMCPServer, ToolDef, MCP_AVAILABLE
 
 
-# ── Mock backend data ────────────────────────────────────
+# Mock backend data
 ORDERS = {
     "ORD-001": {"status": "shipped", "total": 199.0, "customer": "alice"},
     "ORD-002": {"status": "pending", "total": 89.0, "customer": "bob"},
@@ -47,11 +52,11 @@ INVENTORY = {
 NOTIFICATION_LOG: list[dict] = []
 
 
-# ── Tool implementations ─────────────────────────────────
+# Tool implementations
 def query_order(order_id: str) -> str:
     """Look up order by ID. Returns JSON string."""
     if order_id not in ORDERS:
-        return json.dumps({"error": f"Order {order_id} not found"})
+        return json.dumps({"error": f"Order {order_id} not found"}, ensure_ascii=False)
     return json.dumps(ORDERS[order_id], ensure_ascii=False)
 
 
@@ -59,17 +64,17 @@ def check_inventory(sku: str) -> str:
     """Look up stock for a SKU. Returns JSON string."""
     qty = INVENTORY.get(sku)
     if qty is None:
-        return json.dumps({"error": f"SKU {sku} not in inventory"})
-    return json.dumps({"sku": sku, "quantity": qty, "in_stock": qty > 0})
+        return json.dumps({"error": f"SKU {sku} not in inventory"}, ensure_ascii=False)
+    return json.dumps({"sku": sku, "quantity": qty, "in_stock": qty > 0}, ensure_ascii=False)
 
 
 def send_notification(user_id: str, message: str) -> str:
     """Mock-send a notification. Returns confirmation."""
     NOTIFICATION_LOG.append({"user_id": user_id, "message": message})
-    return json.dumps({"status": "sent", "queue_size": len(NOTIFICATION_LOG)})
+    return json.dumps({"status": "sent", "queue_size": len(NOTIFICATION_LOG)}, ensure_ascii=False)
 
 
-# ── Build server (same API for real MCP and Edu mock) ────
+# Build server (same API for real MCP and Edu mock)
 def build_server():
     server = EduMCPServer(name="enterprise-demo")
     server.add_tool(ToolDef(
@@ -139,19 +144,19 @@ def run_demo_mode():
     print("=" * 60)
     print(f"\n{len(server.list_tools())} tools available:")
     for t in server.list_tools():
-        print(f"  • {t['name']}: {t['description']}")
+        print(f"  - {t['name']}: {t['description']}")
         print(f"      params: {list(t['parameters']['properties'].keys())}")
 
 
-# ── Stdio JSON-RPC loop — 真正的 MCP 协议精髓（不依赖 mcp 包） ──
+# Stdio JSON-RPC loop - the core protocol idea without requiring the mcp package.
 def run_stdio_jsonrpc():
     """Real subprocess server: read JSON-RPC requests from stdin, write responses to stdout.
 
     Implements a subset of MCP protocol:
-    - initialize       → {protocol_version, server_info}
-    - tools/list       → {tools: [...]}
-    - tools/call       → {content: [{type: "text", text: ...}]}
-    - shutdown         → exit cleanly
+    - initialize       -> {protocol_version, server_info}
+    - tools/list       -> {tools: [...]}
+    - tools/call       -> {content: [{type: "text", text: ...}]}
+    - shutdown         -> exit cleanly
 
     This is what every real MCP server does at the wire level.
     Official mcp SDK just wraps this with nicer ergonomics.
@@ -178,7 +183,7 @@ def run_stdio_jsonrpc():
             method = req.get("method")
             params = req.get("params", {})
             req_id = req.get("id")
-            print(f"[server] ← {method}({params})", file=sys.stderr, flush=True)
+            print(f"[server] <- {method}({params})", file=sys.stderr, flush=True)
 
             try:
                 if method == "initialize":
@@ -227,7 +232,7 @@ if __name__ == "__main__":
         run_stdio_jsonrpc()
     elif MCP_AVAILABLE:
         # 装了官方 mcp 包就用真 SDK
-        print("Starting real MCP server on stdio (FastMCP)…", file=sys.stderr)
+        print("Starting real MCP server on stdio (FastMCP)...", file=sys.stderr)
         run_real_mcp()
     else:
         # 默认走自实现 JSON-RPC stdio loop（生产质感的 demo）

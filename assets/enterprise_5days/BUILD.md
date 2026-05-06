@@ -62,14 +62,14 @@ cp assets/enterprise_ver2/fonts/NotoSansCJKsc-Regular.otf assets/enterprise_5day
 每个 batch = 1 本新 notebook + 可能的新 utils 文件。详见 `tools/build5d_day{4am,4pm,5am,5pm}.py`（构建过程中创建）。
 
 每本 notebook 严格按 3 天版的【基础+进阶+verify】范式：
-- 章首 markdown「📋 讲课提示」（tag `instructor_only`）
+- 章首 markdown「 讲课提示」（tag `instructor_only`）
 - 4 个练习 cell（tag `fillin` + `batch5`），含 `↓↓↓ 【基础】填空 ↓↓↓` 与 `↓↓↓ 【进阶】填空 ↓↓↓` 两块
-- 每练习末尾 `verify()` 自动 assert ✅/❌/⏭
+- 每练习末尾 `verify()` 自动 assert OK/FAIL/SKIP
 
 ## Batch 6 — 预跑 + 派生 student
 
 ```bash
-conda activate llmc
+conda activate llmcs
 cd assets/enterprise_5days
 cp .env.example .env  # 填 DASHSCOPE_API_KEY + LANGFUSE_*
 
@@ -80,12 +80,13 @@ for nb in instructor/Day{4,5}*.ipynb; do
 done
 
 # 派生学员版
-python ../../tools/derive_student.py  # 默认指向 ver2，改路径或在 5days 下另存
+# 当前仓库已不保留 derive_student.py；student/ notebook 直接作为 source of truth 维护。
+# 如需重新生成 student 版，请先从 git 历史恢复早期生成脚本，或写新的派生脚本后再执行。
 
 rm .env  # 立即清！
 ```
 
-注意：`tools/derive_student.py` 当前默认指向 `enterprise_ver2/`。复用时复制一份 `tools/derive_student_5days.py`，改 `INSTRUCTOR` 与 `STUDENT` 路径。
+注意：当前 `tools/` 只保留 `restore_utils_symlink.py` 和 `sync_enterprise_assets.py` 两个仍在用的同步器；不要按旧流程调用不存在的派生脚本。
 
 ---
 
@@ -99,7 +100,7 @@ ls assets/enterprise_5days/student/*.ipynb | wc -l       # 11
 # 2. Day1-3 与 3 天版一致
 for nb in Day0 Day1_上午 Day1_下午 Day2_上午 Day2_下午 Day3_上午 Day3_下午; do
   cmp assets/enterprise_ver2/instructor/${nb}*.ipynb \
-      assets/enterprise_5days/instructor/${nb}*.ipynb && echo "✓ $nb" || echo "✗ $nb"
+      assets/enterprise_5days/instructor/${nb}*.ipynb && echo "OK $nb" || echo "NO $nb"
 done
 
 # 3. Day4-5 砍肉验证（通过 3 天版的 grep 规则）
@@ -114,7 +115,7 @@ for nb in sorted(glob.glob('assets/enterprise_5days/student/Day{4,5}*.ipynb')):
     n_fill = sum(1 for c in n['cells']
                  if 'fillin' in c.get('metadata',{}).get('tags',[]))
     print(f'{nb}: {n_fill} fillin')
-# 期望 Day4_上午:4 / Day4_下午:4 / Day5_上午:4 / Day5_下午:3
+# 期望 Day4_上午:4 / Day4_下午:5 / Day5_上午:4 / Day5_下午:6
 "
 
 # 5. MCP server 独立验证
@@ -130,7 +131,7 @@ python client_test.py   # 应能列出 3 个 tool
 1. **MCP SDK 版本敏感**：`mcp>=0.9` 是 stdio transport 的稳定版；如装更新版接口可能变。requirements.txt 已锁。
 2. **Langfuse 双模式**：cloud 注册麻烦时改本地 docker-compose（`docker compose up langfuse`）。`utils/observability.py` 自动检测 `LANGFUSE_PUBLIC_KEY` 是否填，没填走 mock observer 不阻塞课程。
 3. **bge-reranker 首次下载约 400MB**：建议讲师课前预下载到 `~/.cache/huggingface/`，学员开课直接走缓存。
-4. **Multi-Agent 烧 token**：默认全用 qwen-turbo（不用 qwen-plus），单练习 ≤ 30 turns，预算可控。
+4. **Multi-Agent 烧 token**：课堂默认走 `LLM_MODEL`（固定快照 `qwen-plus-2025-01-25`）；预算紧时改 `.env` 为 `qwen-turbo`，单练习 ≤ 30 turns，预算可控。
 5. **升级 Capstone (Day5_下午) 不要从 0 写**：讲师版预跑跑通，学员只改其中 1-2 模块（脚手架已给）。
 
 ---

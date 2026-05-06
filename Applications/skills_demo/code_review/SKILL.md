@@ -28,9 +28,9 @@ team checklist, then produces a prioritized report.
    - Test coverage of new code
    - Docs updated
 4. **Prioritize findings**:
-   - **🔴 Blocking**: would break prod / security
-   - **🟡 Should fix**: bad practice but works
-   - **🟢 Nice to have**: style / micro-optimization
+   - **[P1] Blocking**: would break prod / security
+   - **[P2] Should fix**: bad practice but works
+   - **[P3] Nice to have**: style / micro-optimization
 5. **Output**: structured markdown report (≤ 200 words)
 
 ## Output format
@@ -39,15 +39,15 @@ team checklist, then produces a prioritized report.
 ## Code Review Summary
 
 **Files reviewed**: ...
-**Critical**: <count>  **Important**: <count>  **Nits**: <count>
+**Critical**: <count> **Important**: <count> **Nits**: <count>
 
-### 🔴 Blocking
+### [P1] Blocking
 - ...
 
-### 🟡 Should fix
+### [P2] Should fix
 - ...
 
-### 🟢 Nice to have
+### [P3] Nice to have
 - ...
 ```
 

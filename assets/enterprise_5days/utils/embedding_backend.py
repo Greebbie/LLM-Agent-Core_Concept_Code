@@ -34,6 +34,7 @@ class EmbeddingConfig:
     dimension: int = 384
     api_key: Optional[str] = None
     normalize: bool = True
+    device: Optional[str] = None
 
 
 class BaseEmbeddingBackend(ABC):
@@ -79,10 +80,11 @@ class SentenceTransformersBackend(BaseEmbeddingBackend):
         except ImportError:
             raise ImportError("请安装: pip install sentence-transformers")
 
-        print(f"正在加载 Embedding 模型: {config.model}...")
-        self.model = SentenceTransformer(config.model)
+        device = config.device or os.getenv("SENTENCE_TRANSFORMERS_DEVICE", "cpu")
+        print(f"正在加载 Embedding 模型: {config.model} (device={device})...")
+        self.model = SentenceTransformer(config.model, device=device)
         self.config.dimension = self.model.get_sentence_embedding_dimension()
-        print(f"✓ 模型加载完成! 维度: {self.config.dimension}")
+        print(f"OK 模型加载完成! 维度: {self.config.dimension}")
 
     def embed(self, texts: Union[str, List[str]]) -> np.ndarray:
         if isinstance(texts, str):
@@ -225,7 +227,7 @@ class HuggingFaceEmbeddingBackend(BaseEmbeddingBackend):
             output = self.model(**test)
             self.config.dimension = output.last_hidden_state.shape[-1]
 
-        print(f"✓ 模型加载完成! 维度: {self.config.dimension}")
+        print(f"OK 模型加载完成! 维度: {self.config.dimension}")
 
     def _mean_pooling(self, model_output, attention_mask):
         """Mean pooling"""
@@ -376,7 +378,7 @@ class SimpleVectorStore:
                 try:
                     embedding_backend = get_embedding_backend("sentence-transformers")
                 except ImportError:
-                    print("⚠️ 无可用 Embedding 后端，使用简单的 TF-IDF")
+                    print("WARN 无可用 Embedding 后端，使用简单的 TF-IDF")
                     embedding_backend = TFIDFEmbeddingBackend()
 
         self.embedder = embedding_backend
@@ -419,7 +421,7 @@ class SimpleVectorStore:
         else:
             self.vectors = np.vstack([self.vectors, new_vectors])
 
-        print(f"✓ 已添加 {len(documents)} 个文档，总计 {len(self.documents)} 个")
+        print(f"OK 已添加 {len(documents)} 个文档，总计 {len(self.documents)} 个")
 
     def search(
         self,
@@ -475,7 +477,7 @@ class SimpleVectorStore:
                 "documents": self.documents,
                 "metadata": self.metadata
             }, f, ensure_ascii=False, indent=2)
-        print(f"✓ 已保存到 {path}")
+        print(f"OK 已保存到 {path}")
 
     def load(self, path: str):
         """从文件加载"""
@@ -488,7 +490,7 @@ class SimpleVectorStore:
             self.documents = meta["documents"]
             self.metadata = meta["metadata"]
 
-        print(f"✓ 已加载 {len(self.documents)} 个文档")
+        print(f"OK 已加载 {len(self.documents)} 个文档")
 
 
 class TFIDFEmbeddingBackend(BaseEmbeddingBackend):
@@ -578,14 +580,14 @@ if __name__ == "__main__":
     try:
         embedder = get_embedding_backend("sentence-transformers")
         vectors = embedder.embed(["Hello world", "How are you?"])
-        print(f"\n✓ SentenceTransformers: 维度 {vectors.shape}")
+        print(f"\nOK SentenceTransformers: 维度 {vectors.shape}")
     except Exception as e:
-        print(f"\n⚠️ SentenceTransformers 不可用: {e}")
+        print(f"\nWARN SentenceTransformers 不可用: {e}")
         print("使用 TF-IDF 备选方案...")
         embedder = TFIDFEmbeddingBackend()
         embedder.fit(["Hello world", "How are you?", "This is a test"])
         vectors = embedder.embed(["Hello world", "How are you?"])
-        print(f"✓ TF-IDF: 维度 {vectors.shape}")
+        print(f"OK TF-IDF: 维度 {vectors.shape}")
 
     # 测试向量数据库
     print("\n测试向量数据库...")
@@ -601,4 +603,4 @@ if __name__ == "__main__":
     for r in results:
         print(f"  - {r['document'][:50]}... (score: {r['score']:.3f})")
 
-    print("\n✓ 所有测试通过!")
+    print("\nOK 所有测试通过!")

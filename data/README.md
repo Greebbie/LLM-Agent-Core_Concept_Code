@@ -5,7 +5,13 @@ This folder contains focused, file-based datasets for both training routes.
 ## Focused Task
 - Short Chinese knowledge Q&A (single-sentence answers)
 - Emphasis on concise, factual responses
-- DPO preference pairs favor structured "要点" style (definition + usage) over unstructured text
+- SFT splits are controlled classroom data. They are useful for showing
+  instruction-following and loss masking, but the normal validation/test sets
+  intentionally stay in-domain and share templates with training.
+- DPO preference pairs now make the preference explicit: the prompt asks for a
+  two-point "definition + usage" answer. Rejected answers are incomplete,
+  wrong-concept, vague, or format-violating, so the chosen answer is not only a
+  prettier surface form.
 
 ## Evaluation
 - eval_zh_extended.jsonl
@@ -55,3 +61,17 @@ SFT JSONL:
 
 DPO JSONL:
 { "prompt": "...", "chosen": "...", "rejected": "...", "category": "..." }
+
+## Data Meaning Notes
+- Pretraining data (`pretrain_corpus_zh.txt`) is the only route using real
+  open text by default. The lesson goal is next-token language modeling and
+  perplexity reduction, not factual QA ability.
+- GPT-2 SFT (`gpt2_sft_*`) is a semantic classification drill over e-commerce
+  customer intents. It has real label signal, but only 18 normalized feedback
+  templates, so high accuracy mainly means the model learned the controlled
+  task.
+- Custom GPT SFT (`custom_sft_*`) is a compact concept memorization /
+  instruction-format drill. It is intentionally not a real benchmark.
+- Custom GPT DPO (`custom_dpo_*`) is now an instruction-preference drill:
+  "return definition + usage in two bullet-like points." It teaches DPO
+  mechanics and preference direction, not open-ended human preference modeling.

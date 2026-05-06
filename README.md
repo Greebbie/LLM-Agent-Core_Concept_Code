@@ -61,7 +61,7 @@
 
 ### 前置要求（尽量低门槛）
 
-- ✅ **Python 3.8+**（推荐 Python 3.9），能运行 Notebook（Jupyter/Lab）
+- ✅ **Python 3.10+**（推荐使用 `llmcs` 环境：Python 3.11.15），能运行 Notebook（Jupyter/Lab）和官方 MCP/Langfuse SDK
 - ✅ 基本编程能力即可（不要求系统的 DL/数学背景）
 - ➕ **推荐 NVIDIA GPU**：SFT/LoRA/DPO 等章节更顺畅（CPU 也可阅读与小规模演示）
 
@@ -286,7 +286,7 @@ graph TD
 
 ---
 
-## 🛠 环境配置
+## 环境配置
 
 > 下面的步骤与仓库 `requirements.txt` 配合使用。
 
@@ -298,7 +298,14 @@ cd LLM-Agent-Core_Concept_Code
 ```
 
 ### 2) 创建虚拟环境（推荐）
-> 推荐使用Conda
+> 推荐使用 Conda；当前课程主环境为 `llmcs`，Python 3.11.15。
+
+```bash
+conda create -n llmcs python=3.11 -y
+conda activate llmcs
+```
+
+如不使用 Conda，也可以用 venv：
 
 ```bash
 python -m venv venv
@@ -311,24 +318,26 @@ venv\Scripts\Activate.ps1
 ```
 
 
-### 3) 安装 PyTorch（按设备选择其一）
+### 3) 先安装 PyTorch（按设备选择其一）
 
 ```bash
-# CPU
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-
-# CUDA 11.8
-pip install torch --index-url https://download.pytorch.org/whl/cu118
-
-# CUDA 12.1
-pip install torch --index-url https://download.pytorch.org/whl/cu121
+# 推荐：CUDA 12.8 (RTX 50 系 / 新 CUDA 环境)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
 # CUDA 12.4
-pip install torch --index-url https://download.pytorch.org/whl/cu124
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 
-# CUDA 12.8 (RTX 50 系)
-pip install torch --index-url https://download.pytorch.org/whl/cu128
+# CUDA 12.1
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# CUDA 11.8
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# 没有 NVIDIA GPU 时用 CPU 版
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 ```
+
+`requirements.txt` 不直接安装 torch；请先按上面设备通道装好 PyTorch，再安装其它依赖。
 
 ### 4) 安装项目依赖
 
@@ -357,23 +366,23 @@ ollama serve
 
 ```bash
 # macOS/Linux
-export OPENAI_API_KEY="sk-xxx"
+export OPENAI_API_KEY="<your_openai_api_key>"
 
 # Windows (PowerShell)
-setx OPENAI_API_KEY "sk-xxx"
+setx OPENAI_API_KEY "<your_openai_api_key>"
 ```
 
 **DashScope（阿里云通义，国内默认）**
 
 ```bash
 # macOS/Linux
-export DASHSCOPE_API_KEY="sk-xxx"
+export DASHSCOPE_API_KEY="<your_dashscope_api_key>"
 
 # Windows (PowerShell)
-setx DASHSCOPE_API_KEY "sk-xxx"
+setx DASHSCOPE_API_KEY "<your_dashscope_api_key>"
 ```
 
-模型名走 env var：默认 `LLM_MODEL=qwen-plus`、`EMBEDDING_MODEL=text-embedding-v3`，不用改。如果测试号在 `qwen-plus` 上撞到 free-tier 限额，把 `LLM_MODEL` 改成固定快照 `qwen-plus-2025-01-25` 即可，notebook 不动。
+模型名走 env var：默认 `LLM_MODEL=qwen-plus-2025-01-25`、`EMBEDDING_MODEL=text-embedding-v3`，不用改；如果你想走最新别名，再把 `LLM_MODEL` 改成 `qwen-plus`，notebook 不动。
 
 ---
 

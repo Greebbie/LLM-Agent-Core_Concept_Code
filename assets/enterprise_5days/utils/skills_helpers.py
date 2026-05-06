@@ -202,7 +202,7 @@ def discover_skills(skills_root: str | Path) -> list[Skill]:
             item_resolved = item.resolve()
             item_resolved.relative_to(skills_root)  # raises ValueError if escapes
         except (OSError, ValueError):
-            print(f"⚠ Skipping {item}: resolves outside skills_root")
+            print(f"WARN Skipping {item}: resolves outside skills_root")
             continue
         if not item_resolved.is_dir():
             continue
@@ -224,7 +224,7 @@ def discover_skills(skills_root: str | Path) -> list[Skill]:
                 reference_files=refs,
             ))
         except (OSError, ValueError, KeyError) as e:
-            print(f"⚠ Skipping {item_resolved}: {e}")
+            print(f"WARN Skipping {item_resolved}: {e}")
     return skills
 
 

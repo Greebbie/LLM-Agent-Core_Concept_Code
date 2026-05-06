@@ -34,6 +34,7 @@ class EmbeddingConfig:
     dimension: int = 384
     api_key: Optional[str] = None
     normalize: bool = True
+    device: Optional[str] = None
 
 
 class BaseEmbeddingBackend(ABC):
@@ -79,8 +80,9 @@ class SentenceTransformersBackend(BaseEmbeddingBackend):
         except ImportError:
             raise ImportError("请安装: pip install sentence-transformers")
 
-        print(f"正在加载 Embedding 模型: {config.model}...")
-        self.model = SentenceTransformer(config.model)
+        device = config.device or os.getenv("SENTENCE_TRANSFORMERS_DEVICE", "cpu")
+        print(f"正在加载 Embedding 模型: {config.model} (device={device})...")
+        self.model = SentenceTransformer(config.model, device=device)
         self.config.dimension = self.model.get_sentence_embedding_dimension()
         print(f"✓ 模型加载完成! 维度: {self.config.dimension}")
 

@@ -8,8 +8,8 @@
 
 ```
 enterprise_ver2/
-├── instructor/      # 讲师版（含解答 + 内嵌讲课提示 + 全 cell output）⚠️ 不要群发学员
-├── student/         # 学员版（留填空，outputs 已清空，课堂现场运行生成）✅ 发给学员
+├── instructor/      # 讲师版（含解答、讲课提示和完整输出；仅供讲师使用）
+├── student/         # 学员版（保留填空，outputs 已清空；用于课堂发放）
 ├── utils/           # 共享工具：统一 LLM/Embedding 后端入口
 ├── data/            # 教学数据
 ├── fonts/           # 中文字体（图表渲染）
@@ -25,12 +25,14 @@ enterprise_ver2/
 ### 1. 准备环境
 
 ```bash
-# 推荐使用 conda 隔离环境
-conda activate llmc
+# 如果没装过 llmcs，先建好（推荐 Python 3.11；当前课程主环境为 Python 3.11.15）
+conda create -n llmcs python=3.11 -y
+conda activate llmcs
 
-# 如果没装过 llmc，先建好（Python 3.10+）
-conda create -n llmc python=3.10 -y
-conda activate llmc
+# 先安装 PyTorch：有 NVIDIA GPU（如 RTX 50 系）优先装 CUDA 12.8 版；CPU 机器把 cu128 改成 cpu
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# 再安装项目依赖
 pip install -r requirements.txt
 ```
 
@@ -41,9 +43,9 @@ cp .env.example .env
 # 编辑 .env，填入你的 API key（推荐 DashScope，国内稳定快速）
 ```
 
-也可以直接运行 `Day0_环境配置与测试.ipynb` 的 Step 4，只改一行 `DASHSCOPE_API_KEY = ""`。课堂默认模型是 `qwen-plus` + `text-embedding-v3`，一般不用改模型名。
+也可以直接运行 `Day0_环境配置与测试.ipynb` 的 Step 4，只改一行 `DASHSCOPE_API_KEY = ""`。课堂默认模型是 `qwen-plus-2025-01-25` + `text-embedding-v3`，一般不用改模型名。
 
-如果测试号在 `qwen-plus` 上撞到 free-tier 限额，把 `.env` 里的 `LLM_MODEL` 改成 `qwen-plus-2025-01-25`（固定快照）即可。
+默认使用固定快照 `qwen-plus-2025-01-25`，便于课堂复现；如需使用最新别名，把 `.env` 里的 `LLM_MODEL` 改成 `qwen-plus` 即可。
 
 ### 3. 跑 Day0 验证
 
@@ -52,7 +54,7 @@ jupyter lab instructor/Day0_环境配置与测试.ipynb
 # 学员发布场景：jupyter lab student/Day0_环境配置与测试.ipynb
 ```
 
-Day0 会自动检查 Python 版本、依赖完整性、API 连通性、字体路径。**全部 ✅ 后再开课。**
+Day0 会自动检查 Python 版本、依赖完整性、API 连通性和字体路径。全部通过后再开课。
 
 ---
 
@@ -68,6 +70,18 @@ Day0 会自动检查 Python 版本、依赖完整性、API 连通性、字体路
 
 ---
 
+## 与主线章节的对应关系
+
+3 天版是主线内容的压缩版，适合先交付基础能力：
+
+- Day 1：覆盖 Ch0-Ch6 的核心概念，重点是训练循环、Tokenizer、Embedding、Self-Attention、Transformer Block 和 GPT 生成。
+- Day 2：覆盖 Ch7-Ch10 的训练链路，重点是预训练、SFT、LoRA、DPO 与评估边界。
+- Day 3：覆盖 Ch12 与 Applications App1-App4 的基础应用，落到 RAG、Agent、Code Agent 和企业知识助手 Capstone。
+
+3 天版不包含 5 天版新增的 MCP、Skills、Agentic RAG 与 LLMOps；这些内容放在 `../enterprise_5days/` 的 Day 4-5。这样分层更清楚：3 天版负责建立主线能力，5 天版负责补齐 Agent 工程化与生产前验证。
+
+---
+
 ## 填空 / 练习设计
 
 每个练习采用**双轨模板**：
@@ -79,10 +93,10 @@ def basic_solution(...):
 
 # 【进阶】（技术学员选做，15 min）
 def advanced_solution(...):
-    # TODO: 完整实现
+    # 继续补全完整实现
     pass
 
-verify()  # 自动 assert，✅/❌ 即时反馈
+verify()  # 用断言检查关键结果
 ```
 
 业务背景的学员稳拿基础分；技术学员可冲进阶；verify() 立即知道做对没。
@@ -92,7 +106,7 @@ verify()  # 自动 assert，✅/❌ 即时反馈
 ## 给讲师的发布约定
 
 - **务必发 `student/` 版**给学员（已剥离解答和讲课提示）
-- `instructor/` 版**不要进学员群**——含全部解答 + 章节开头的「📋 讲课提示」（含开场提问、互动设计、常见误解、时间紧时跳哪段）
+- `instructor/` 版**不要进学员群**——含全部解答和章节开头的讲课提示（含开场提问、互动设计、常见误解、时间紧时跳哪段）
 - 上课时讲师在自己屏幕上开 instructor 版，学员屏幕开 student 版
 
 ---
@@ -108,7 +122,7 @@ emb = env.get_embedder()    # 自动按 .env 里的 EMBEDDING_BACKEND 加载
 ```
 
 支持的后端：
-- `dashscope`（推荐国内 / qwen-plus / text-embedding-v3）
+- `dashscope`（推荐国内 / qwen-plus-2025-01-25 / text-embedding-v3）
 - `openai`（gpt-4o-mini / text-embedding-3-small）
 - `ollama`（本地 / qwen2.5 / nomic-embed-text）
 - `huggingface`（本地 / sentence-transformers）
@@ -124,14 +138,14 @@ emb = env.get_embedder()    # 自动按 .env 里的 EMBEDDING_BACKEND 加载
 - **Day2 节奏重排** —— SFT 动手部分从上午搬到下午，避免单本过载
 - **填空模板分层** —— 基础+进阶+verify()，混合班双轨进阶
 - **每章节开头加「📋 讲课提示」**（仅讲师版）—— 取代独立讲课笔记
-- **conda llmc 环境约定** —— 所有 notebook 头部统一指向
+- **conda llmcs 环境约定** —— 所有 notebook 头部统一指向
 
 ---
 
 ## 验证
 
 ```bash
-# 跑通验证（在 conda llmc 环境）
+# 跑通验证（在 conda llmcs 环境）
 for nb in instructor/*.ipynb; do
   jupyter nbconvert --to notebook --execute "$nb" \
     --output "${nb%.ipynb}_check.ipynb" \

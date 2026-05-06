@@ -1,4 +1,4 @@
-﻿{"instruction":"用一句话解释：深度学习是什么？","response":"深度学习是用多层神经网络学习数据表示的方法。","category":"知识问答","metric":"text","expected":"深度学习是用多层神经网络学习数据表示的方法。"}
+{"instruction":"用一句话解释：深度学习是什么？","response":"深度学习是用多层神经网络学习数据表示的方法。","category":"知识问答","metric":"text","expected":"深度学习是用多层神经网络学习数据表示的方法。"}
 {"instruction":"用不超过40字回答：机器学习是什么？","response":"机器学习是让模型从数据中学习规律并做预测。","category":"知识问答","metric":"text","expected":"机器学习是让模型从数据中学习规律并做预测。"}
 {"instruction":"简要说明：监督学习是什么？","response":"监督学习用带标签的数据训练模型。","category":"知识问答","metric":"text","expected":"监督学习用带标签的数据训练模型。"}
 {"instruction":"回答问题：无监督学习是什么？","response":"无监督学习从无标签数据中发现结构。","category":"知识问答","metric":"text","expected":"无监督学习从无标签数据中发现结构。"}

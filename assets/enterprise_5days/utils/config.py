@@ -17,7 +17,7 @@ import sys
 DEFAULTS = {
     # LLM 后端
     "llm_backend": "dashscope",
-    "llm_model": "qwen-plus",
+    "llm_model": "qwen-plus-2025-01-25",
 
     # Embedding 后端
     "embedding_backend": "dashscope",
@@ -34,16 +34,22 @@ if not os.path.exists(os.path.dirname(_CONFIG_FILE)):
 def _load_env_file(path=None, verbose: bool = False):
     """从 .env 文件加载环境变量。
 
-    **优先级**：.env 文件 > 系统环境变量（与 dotenv 标准行为一致）。
-    如果系统已设某个 key，.env 中同名 key 会**覆盖**之（不再用 setdefault）。
-    多个候选 .env 时只用第一个找到的；若发现多个，verbose 模式会警告。
+    5 天交付包必须优先读取本包根目录的 `.env`。如果没有本包 `.env`，
+    就使用系统环境变量；不要向上读取主仓库 `.env`，避免讲师本机配置污染
+    学员交付包输出。
 
     Args:
         path: 显式 .env 路径
         verbose: True 时打印加载信息 + 多 .env 警告
     """
     path = path or _CONFIG_FILE
-    candidates = [path, os.path.join(os.getcwd(), ".env"), ".env"]
+    package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    candidates = [
+        path,
+        os.path.join(package_root, ".env"),
+        os.path.join(os.getcwd(), ".env"),
+        ".env",
+    ]
     # 去重保序
     seen = set()
     unique_candidates = []
@@ -56,7 +62,7 @@ def _load_env_file(path=None, verbose: bool = False):
     if not found_paths:
         return None
     if len(found_paths) > 1 and verbose:
-        print(f"⚠ 发现 {len(found_paths)} 个 .env 文件，只用第一个: {found_paths[0]}")
+        print(f"WARN 发现 {len(found_paths)} 个 .env 文件，只用第一个: {found_paths[0]}")
         for extra in found_paths[1:]:
             print(f"  (忽略: {extra})")
     chosen = found_paths[0]
@@ -68,7 +74,7 @@ def _load_env_file(path=None, verbose: bool = False):
                 key = key.strip()
                 value = value.strip().strip('"').strip("'")
                 if key and value:
-                    # .env 优先（覆盖系统 env）— 学员/讲师改 .env 应该立即生效
+                    # 本包 .env 优先（覆盖系统 env）— 学员/讲师改 .env 应该立即生效
                     os.environ[key] = value
     return chosen
 
@@ -109,7 +115,7 @@ def save_config(api_key=None, llm_backend=None, llm_model=None,
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
-    print(f"✅ 配置已保存到: {os.path.abspath(path)}")
+    print(f"OK 配置已保存到: {os.path.abspath(path)}")
 
 
 class Environment:
@@ -137,22 +143,49 @@ class Environment:
         """获取 LLM 后端实例（懒加载，只创建一次）"""
         if self._llm is None:
             get_llm_backend = self._import_sibling("llm_backend", "get_llm_backend")
-            self._llm = get_llm_backend(self.llm_backend, model=self.llm_model)
-            print(f"[LLM] {self.llm_backend} / {self.llm_model}")
+            try:
+                self._llm = get_llm_backend(self.llm_backend, model=self.llm_model)
+                # API clients often fail only on the first request, not at construction.
+                self._llm.generate("hi", max_tokens=5)
+                print(f"[LLM] {self.llm_backend} / {self.llm_model}")
+            except Exception as exc:  # noqa: BLE001 - classroom fallback should keep notebooks runnable.
+                if self.llm_backend == "mock":
+                    raise
+                print(f"[LLM fallback] {self.llm_backend} unavailable: {exc}")
+                self._llm = get_llm_backend("mock")
+                self.llm_backend = "mock"
+                self.llm_model = "deterministic-teaching-mock"
+                print(f"[LLM] {self.llm_backend} / {self.llm_model}")
         return self._llm
 
     def get_embedder(self):
         """获取 Embedding 后端实例（懒加载，只创建一次）"""
         if self._embedder is None:
             get_embedding_backend = self._import_sibling("embedding_backend", "get_embedding_backend")
-            self._embedder = get_embedding_backend(self.embedding_backend, model=self.embedding_model)
-            print(f"[Embedding] {self.embedding_backend} / {self.embedding_model} (dim={self._embedder.dimension})")
+            try:
+                self._embedder = get_embedding_backend(self.embedding_backend, model=self.embedding_model)
+                # Validate API-based embedders immediately so later exercises do not fail mid-cell.
+                self._embedder.embed(["hi"])
+                print(f"[Embedding] {self.embedding_backend} / {self.embedding_model} (dim={self._embedder.dimension})")
+            except Exception as exc:  # noqa: BLE001 - classroom fallback should keep notebooks runnable.
+                if self.embedding_backend in {"sentence-transformers", "st"}:
+                    raise
+                print(f"[Embedding fallback] {self.embedding_backend} unavailable: {exc}")
+                self.embedding_backend = "sentence-transformers"
+                self.embedding_model = "paraphrase-multilingual-MiniLM-L12-v2"
+                self._embedder = get_embedding_backend(
+                    self.embedding_backend,
+                    model=self.embedding_model,
+                    device=os.getenv("SENTENCE_TRANSFORMERS_DEVICE", "cpu"),
+                )
+                self._embedder.embed(["hi"])
+                print(f"[Embedding] {self.embedding_backend} / {self.embedding_model} (dim={self._embedder.dimension})")
         return self._embedder
 
     def __repr__(self):
         key = os.getenv("DASHSCOPE_API_KEY", "")
         # 不打印任何 API key 片段（防止讲师版预跑 output 泄露 key 后 4 位）
-        key_status = "✓ 已配置" if key.startswith("sk-") else "✗ 未配置"
+        key_status = "OK 已配置" if key.startswith("sk-") else "NO 未配置"
         return (
             f"课程环境配置:\n"
             f"  API Key:   {key_status}\n"
@@ -163,7 +196,7 @@ class Environment:
 
 def setup():
     """
-    一键加载配置，返回 Environment 对象
+    加载配置，返回 Environment 对象
 
     在任意 notebook 开头调用：
         from config import setup
@@ -183,7 +216,7 @@ def setup():
         if os.getenv("DASHSCOPE_API_KEY"):
             print("[OK] 使用系统环境变量中的 DASHSCOPE_API_KEY")
         else:
-            print("⚠️ 未找到 .env 配置文件，也没有 DASHSCOPE_API_KEY 环境变量")
+            print("WARN 未找到 .env 配置文件，也没有 DASHSCOPE_API_KEY 环境变量")
             print("   请先运行 Day0_环境配置与测试.ipynb 完成配置")
 
     env = Environment()

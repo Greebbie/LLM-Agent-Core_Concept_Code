@@ -1,4 +1,4 @@
-﻿{"instruction":"用一句话解释：学习率是什么？","response":"学习率是每次参数更新的步长。","category":"知识问答","metric":"text","expected":"学习率是每次参数更新的步长。"}
+{"instruction":"用一句话解释：学习率是什么？","response":"学习率是每次参数更新的步长。","category":"知识问答","metric":"text","expected":"学习率是每次参数更新的步长。"}
 {"instruction":"用不超过40字回答：批大小是什么？","response":"批大小是一次更新使用的样本数量。","category":"知识问答","metric":"text","expected":"批大小是一次更新使用的样本数量。"}
 {"instruction":"简要说明：过拟合是什么？","response":"过拟合指模型记住训练数据而泛化差。","category":"知识问答","metric":"text","expected":"过拟合指模型记住训练数据而泛化差。"}
 {"instruction":"回答问题：欠拟合是什么？","response":"欠拟合指模型太简单而无法拟合数据。","category":"知识问答","metric":"text","expected":"欠拟合指模型太简单而无法拟合数据。"}

@@ -17,11 +17,11 @@ assets/enterprise_ver2/instructor/  (7 本 raw)
         ▼
 assets/enterprise_ver2/instructor/  (7 本 加工后)
         │
-        │ ③ jupyter nbconvert --execute  ← 在 conda llmc 跑通，保留 cell outputs
+        │ ③ jupyter nbconvert --execute  ← 在 conda llmcs 跑通，保留 cell outputs
         ▼
 assets/enterprise_ver2/instructor/  (7 本 含 outputs)
         │
-        │ ④ tools/derive_student.py  ← 去📋讲课提示 + fillin cell 替换为 TODO 桩 + 清那些 cell 的 output
+        │ ④ 早期 derive_student.py  ← 去📋讲课提示 + fillin cell 替换为 TODO 桩 + 清那些 cell 的 output
         ▼
 assets/enterprise_ver2/student/  (7 本 学员版)
 ```
@@ -43,7 +43,7 @@ done
 ## ② 跑 transform_v2
 
 ```bash
-conda activate llmc   # 推荐
+conda activate llmcs   # 推荐
 python tools/transform_v2.py
 ```
 
@@ -66,7 +66,7 @@ python tools/transform_v2.py
 学员版要看演示效果，所以 instructor 必须**预跑保留 output**。
 
 ```bash
-conda activate llmc
+conda activate llmcs
 cd assets/enterprise_ver2
 
 # 一次跑 1 本（GPU 资源紧张时）
@@ -96,12 +96,13 @@ done
 ## ④ 派生 student/
 
 ```bash
-python tools/derive_student.py
+# 当前仓库已不保留 derive_student.py；student/ notebook 直接作为 source of truth 维护。
+# 如需重新生成 student 版，请先从 git 历史恢复早期生成脚本，或写新的派生脚本后再执行。
 ```
 
-输出会显示每本删了几个 lecture cells、blank 了几个 fillin cells、保留了几个 pass-through。
+早期脚本输出会显示每本删了几个 lecture cells、blank 了几个 fillin cells、保留了几个 pass-through。
 
-`derive_student.py` 会做这些事：
+早期 `derive_student.py` 会做这些事：
 - 读 `instructor/*.ipynb`
 - 删除 `instructor_only` tag 的 cells（📋 讲课提示）
 - 处理 `fillin` tag 的代码 cells：

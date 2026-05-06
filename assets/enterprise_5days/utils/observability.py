@@ -50,6 +50,33 @@ except ImportError:
     pass
 
 
+def _start_langfuse_span(name: str, input: Any = None, metadata: dict | None = None) -> Any:
+    """Start a Langfuse observation across SDK v2/v3 API differences."""
+    if _LANGFUSE_CLIENT is None:
+        raise RuntimeError("Langfuse client is not initialized")
+
+    kwargs = {"name": name, "input": input}
+    if metadata:
+        kwargs["metadata"] = metadata
+
+    if hasattr(_LANGFUSE_CLIENT, "start_span"):
+        return _LANGFUSE_CLIENT.start_span(**kwargs)
+    if hasattr(_LANGFUSE_CLIENT, "trace"):
+        return _LANGFUSE_CLIENT.trace(**kwargs)
+    raise RuntimeError("Unsupported Langfuse SDK: expected start_span() or trace()")
+
+
+def _update_langfuse_span(handle: Any, **kwargs: Any) -> None:
+    clean = {k: v for k, v in kwargs.items() if v is not None}
+    if clean and hasattr(handle, "update"):
+        handle.update(**clean)
+
+
+def _end_langfuse_span(handle: Any) -> None:
+    if hasattr(handle, "end"):
+        handle.end()
+
+
 # ============================================================
 # MockObserver — pure-Python in-memory trace store
 # ============================================================
@@ -143,7 +170,7 @@ class MockObserver:
 
     def print_tree(self) -> None:
         def render(span: TraceSpan, depth: int = 0) -> None:
-            ms = f"{span.duration_ms:.0f}ms" if span.duration_ms else "running"
+            ms = f"{span.duration_ms:.0f}ms" if span.duration_ms is not None else "running"
             print("  " * depth + f"├─ {span.name} ({ms})")
             for child in span.children:
                 render(child, depth + 1)
@@ -217,14 +244,16 @@ def observe(name: Optional[str] = None) -> Callable:
             input_tokens = _estimate_tokens(*args, *kwargs.values())
             input_repr = {"args": _safe_repr(args, 500), "kwargs": _safe_repr(kwargs, 500)}
             if _BACKEND == "langfuse" and _LANGFUSE_CLIENT is not None:
-                trace = _LANGFUSE_CLIENT.trace(name=span_name, input=input_repr)
+                trace = _start_langfuse_span(span_name, input=input_repr)
                 try:
                     out = fn(*args, **kwargs)
-                    trace.update(output=_safe_repr(out, 500))
+                    _update_langfuse_span(trace, output=_safe_repr(out, 500))
                     return out
                 except Exception as e:
-                    trace.update(level="ERROR", status_message=str(e)[:200])
+                    _update_langfuse_span(trace, level="ERROR", status_message=str(e)[:200])
                     raise
+                finally:
+                    _end_langfuse_span(trace)
             else:
                 span = observer.start_span(span_name, input=input_repr)
                 try:
@@ -257,20 +286,33 @@ class SpanHandle:
     def __init__(self, backend: str, handle: Any):
         self._backend = backend
         self._handle = handle
+        self._closed = False
 
     def update(self, output: Any = None, **metadata):
         """记录 output / metadata 到 span。两种后端通用。"""
         if self._backend == "langfuse":
-            kwargs = {}
-            if output is not None:
-                kwargs["output"] = _safe_repr(output, 500)
-            kwargs.update(metadata)
-            self._handle.update(**kwargs)
+            _update_langfuse_span(
+                self._handle,
+                output=_safe_repr(output, 500) if output is not None else None,
+                **metadata,
+            )
         else:
             # Mock: 直接改 span 字段
             if output is not None:
                 self._handle.output = _safe_repr(output, 500)
             self._handle.metadata.update(metadata)
+
+    def end(self, output: Any = None, **metadata) -> None:
+        """Finish the current span, optionally recording output and metadata first."""
+        if output is not None or metadata:
+            self.update(output=output, **metadata)
+        if self._closed:
+            return
+        if self._backend == "langfuse":
+            _end_langfuse_span(self._handle)
+        else:
+            observer.end_span(self._handle)
+        self._closed = True
 
 
 @contextmanager
@@ -284,17 +326,19 @@ def span(name: str, input: Any = None, **metadata):
     """
     if _BACKEND == "langfuse" and _LANGFUSE_CLIENT is not None:
         safe_input = _safe_repr(input, 500) if input is not None else None
-        trace = _LANGFUSE_CLIENT.trace(name=name, input=safe_input, metadata=metadata)
+        trace = _start_langfuse_span(name, input=safe_input, metadata=metadata)
         handle = SpanHandle("langfuse", trace)
         try:
             yield handle
         except Exception as e:
-            trace.update(level="ERROR", status_message=str(e)[:200])
+            handle.update(level="ERROR", status_message=str(e)[:200])
             raise
+        finally:
+            handle.end()
     else:
         s = observer.start_span(name, input=input, metadata=metadata)
         handle = SpanHandle("mock", s)
         try:
             yield handle
         finally:
-            observer.end_span(s)
+            handle.end()

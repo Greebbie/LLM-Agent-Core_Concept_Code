@@ -82,7 +82,7 @@ pandas>=2.0.0
 #
 # 1. 使用阿里百炼 DashScope API (推荐，统一后端):
 #    - 申请 API Key: https://dashscope.console.aliyun.com/
-#    - 设置环境变量: export DASHSCOPE_API_KEY="sk-xxx"
+#    - 设置环境变量: export DASHSCOPE_API_KEY="<your_dashscope_api_key>"
 #    - LLM 模型: qwen-plus (推荐) / qwen-turbo / qwen-max
 #    - Embedding 模型: text-embedding-v3
 #

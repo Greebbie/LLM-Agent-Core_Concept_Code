@@ -17,7 +17,7 @@ import sys
 DEFAULTS = {
     # LLM 后端
     "llm_backend": "dashscope",
-    "llm_model": "qwen-plus",
+    "llm_model": "qwen-plus-2025-01-25",
 
     # Embedding 后端
     "embedding_backend": "dashscope",
@@ -44,6 +44,15 @@ def _load_env_file(path=None, verbose: bool = False):
     """
     path = path or _CONFIG_FILE
     candidates = [path, os.path.join(os.getcwd(), ".env"), ".env"]
+    # Also walk upward from this file so packaged course notebooks can still
+    # pick up a repo-level .env during local verification.
+    cur = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(6):
+        candidates.append(os.path.join(cur, ".env"))
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            break
+        cur = parent
     # 去重保序
     seen = set()
     unique_candidates = []
@@ -137,16 +146,43 @@ class Environment:
         """获取 LLM 后端实例（懒加载，只创建一次）"""
         if self._llm is None:
             get_llm_backend = self._import_sibling("llm_backend", "get_llm_backend")
-            self._llm = get_llm_backend(self.llm_backend, model=self.llm_model)
-            print(f"[LLM] {self.llm_backend} / {self.llm_model}")
+            try:
+                self._llm = get_llm_backend(self.llm_backend, model=self.llm_model)
+                # API clients often fail only on the first request, not at construction.
+                self._llm.generate("hi", max_tokens=5)
+                print(f"[LLM] {self.llm_backend} / {self.llm_model}")
+            except Exception as exc:  # noqa: BLE001 - classroom fallback should keep notebooks runnable.
+                if self.llm_backend == "mock":
+                    raise
+                print(f"[LLM fallback] {self.llm_backend} unavailable: {exc}")
+                self._llm = get_llm_backend("mock")
+                self.llm_backend = "mock"
+                self.llm_model = "deterministic-teaching-mock"
+                print(f"[LLM] {self.llm_backend} / {self.llm_model}")
         return self._llm
 
     def get_embedder(self):
         """获取 Embedding 后端实例（懒加载，只创建一次）"""
         if self._embedder is None:
             get_embedding_backend = self._import_sibling("embedding_backend", "get_embedding_backend")
-            self._embedder = get_embedding_backend(self.embedding_backend, model=self.embedding_model)
-            print(f"[Embedding] {self.embedding_backend} / {self.embedding_model} (dim={self._embedder.dimension})")
+            try:
+                self._embedder = get_embedding_backend(self.embedding_backend, model=self.embedding_model)
+                # Validate API-based embedders immediately so later exercises do not fail mid-cell.
+                self._embedder.embed(["hi"])
+                print(f"[Embedding] {self.embedding_backend} / {self.embedding_model} (dim={self._embedder.dimension})")
+            except Exception as exc:  # noqa: BLE001 - classroom fallback should keep notebooks runnable.
+                if self.embedding_backend in {"sentence-transformers", "st"}:
+                    raise
+                print(f"[Embedding fallback] {self.embedding_backend} unavailable: {exc}")
+                self.embedding_backend = "sentence-transformers"
+                self.embedding_model = "paraphrase-multilingual-MiniLM-L12-v2"
+                self._embedder = get_embedding_backend(
+                    self.embedding_backend,
+                    model=self.embedding_model,
+                    device=os.getenv("SENTENCE_TRANSFORMERS_DEVICE", "cpu"),
+                )
+                self._embedder.embed(["hi"])
+                print(f"[Embedding] {self.embedding_backend} / {self.embedding_model} (dim={self._embedder.dimension})")
         return self._embedder
 
     def __repr__(self):

@@ -15,50 +15,50 @@
 # -----------------------------------------------------------------------------
 # 核心依赖 (必需)
 # -----------------------------------------------------------------------------
-# torch 建议按设备单独安装（CPU/CUDA 渠道不同），见 README
-# torch>=2.0.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-seaborn>=0.12.2
+# torch 建议按设备单独安装（CPU/CUDA 渠道不同），见 README；llmcs 已验证 torch 2.11.0+cu128。
+# torch>=2.10,<3
+numpy>=2.0,<3
+matplotlib>=3.8,<4
+seaborn>=0.13,<1
 
 # -----------------------------------------------------------------------------
 # LLM 后端 (至少选择一个)
 # -----------------------------------------------------------------------------
 
 # OpenAI API
-openai>=1.0.0
+openai>=2.0,<3
 
 # HuggingFace Transformers (本地模型)
-transformers>=4.36.0
-accelerate>=0.25.0
+transformers>=5.0,<6
+accelerate>=1.0,<2
 
 # Ollama (推荐用于本地，需要单独安装 Ollama 应用)
 # 安装: https://ollama.ai/download
 # 拉取模型: ollama pull qwen2.5:7b
-requests>=2.31.0
+requests>=2.31,<3
 
 # -----------------------------------------------------------------------------
 # Tokenizer 工具
 # -----------------------------------------------------------------------------
-tiktoken>=0.5.0
+tiktoken>=0.8,<1
 
 # -----------------------------------------------------------------------------
 # Embedding 模型 (RAG 系统)
 # -----------------------------------------------------------------------------
-sentence-transformers>=2.2.0
+sentence-transformers>=5.0,<6
 
 # -----------------------------------------------------------------------------
 # 训练相关 (SFT/LoRA/DPO)
 # -----------------------------------------------------------------------------
 
 # PEFT (LoRA 等高效微调)
-peft>=0.7.0
+peft>=0.17,<1
 
 # TRL (SFT/DPO/PPO 训练)
-trl>=0.7.0
+trl>=1.0,<2
 
 # Datasets (数据加载)
-datasets>=2.16.0
+datasets>=4.0,<5
 
 # bitsandbytes (量化，仅 Linux)
 # bitsandbytes>=0.41.0
@@ -66,15 +66,15 @@ datasets>=2.16.0
 # -----------------------------------------------------------------------------
 # Jupyter 环境
 # -----------------------------------------------------------------------------
-jupyter>=1.0.0
-ipywidgets>=8.0.0
+jupyter>=1,<2
+ipywidgets>=8,<9
 
 # -----------------------------------------------------------------------------
 # 其他工具
 # -----------------------------------------------------------------------------
-tqdm>=4.66.0
-scikit-learn>=1.3.0
-pandas>=2.0.0
+tqdm>=4.66,<5
+scikit-learn>=1.5,<2
+pandas>=2.2,<4
 
 # =============================================================================
 # 环境配置说明
@@ -82,8 +82,8 @@ pandas>=2.0.0
 #
 # 1. 使用阿里百炼 DashScope API (推荐，统一后端):
 #    - 申请 API Key: https://dashscope.console.aliyun.com/
-#    - 设置环境变量: export DASHSCOPE_API_KEY="sk-xxx"
-#    - LLM 模型: qwen-plus (推荐) / qwen-turbo / qwen-max
+#    - 设置环境变量: export DASHSCOPE_API_KEY="<your_dashscope_api_key>"
+#    - LLM 模型: qwen-plus-2025-01-25 (推荐固定快照) / qwen-plus / qwen-turbo / qwen-max
 #    - Embedding 模型: text-embedding-v3
 #
 # 2. 使用 Ollama (免费本地运行):
@@ -106,13 +106,13 @@ pandas>=2.0.0
 # 装这一段可以解锁：MCP 协议 / Anthropic Skills / LLMOps Langfuse 可观测性 / 高阶 RAG
 #
 # rank-bm25                     # BM25 sparse retrieval (Hybrid RAG 用)
-# langfuse>=2.0                 # LLMOps trace + dashboard (生产可观测)
-# opentelemetry-api             # OTEL trace 标准
-# opentelemetry-sdk
-# mcp>=0.9                      # Anthropic 官方 MCP SDK (需 Python 3.10+；本课程的 mcp_helpers 不依赖此包)
+# langfuse>=3.0,<4; python_version >= "3.10"  # LLMOps trace + dashboard；mock observer 不需要 key
+# opentelemetry-api>=1.30,<2     # OTEL trace 标准
+# opentelemetry-sdk>=1.30,<2
+# mcp>=1.20,<2; python_version >= "3.10"  # Anthropic 官方 MCP SDK；本课程的 mcp_helpers 不依赖此包
 # anthropic>=0.30               # 直接调 Claude API (用 Skills 时可选)
 #
 # 安装：
-#   pip install rank-bm25 langfuse opentelemetry-api opentelemetry-sdk
-#   pip install "sentence-transformers>=3.0"   # bge-reranker (Agentic RAG 用)
+#   pip install rank-bm25 "langfuse>=3.0,<4" "opentelemetry-api>=1.30,<2" "opentelemetry-sdk>=1.30,<2"
+#   pip install "sentence-transformers>=5.0,<6"   # bge-reranker (Agentic RAG 用)
 # =============================================================================

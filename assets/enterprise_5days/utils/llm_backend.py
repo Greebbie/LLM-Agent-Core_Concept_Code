@@ -7,13 +7,14 @@
 3. DashScope / 通义千问 API (阿里云，OpenAI 兼容)
 4. HuggingFace Transformers (本地运行)
 5. vLLM (高性能推理服务)
+6. Mock (课堂离线/额度不足时的确定性教学后端)
 
 使用示例:
     # Ollama (本地)
     llm = get_llm_backend("ollama", model="qwen2.5:7b")
 
     # DashScope / 通义千问 (云端 API，推荐)
-    llm = get_llm_backend("dashscope", model="qwen-plus")
+    llm = get_llm_backend("dashscope", model=os.getenv("LLM_MODEL", "qwen-plus-2025-01-25"))
 
     # OpenAI
     llm = get_llm_backend("openai", model="gpt-3.5-turbo")
@@ -29,9 +30,45 @@ import os
 import json
 import time
 import random
+from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Generator, Callable
 from dataclasses import dataclass
+
+
+_PROJECT_ENV_LOADED = False
+
+
+def load_project_env() -> None:
+    """Load simple KEY=VALUE pairs from the project .env without overriding env vars."""
+    global _PROJECT_ENV_LOADED
+    if _PROJECT_ENV_LOADED:
+        return
+
+    candidates = [
+        Path.cwd() / ".env",
+        Path(__file__).resolve().parents[1] / ".env",
+    ]
+    seen: set[Path] = set()
+    for env_path in candidates:
+        env_path = env_path.resolve()
+        if env_path in seen or not env_path.exists():
+            continue
+        seen.add(env_path)
+        for raw_line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+    _PROJECT_ENV_LOADED = True
+
+
+load_project_env()
 
 
 def _retry_on_429(func: Callable, *, max_retries: int = 6, base_delay: float = 8.0):
@@ -192,9 +229,9 @@ class OllamaBackend(BaseLLMBackend):
         try:
             resp = self.requests.get(f"{self.base_url}/api/tags", timeout=5)
             if resp.status_code != 200:
-                print(f"⚠️ Ollama 服务可能未启动，请运行: ollama serve")
+                print(f"WARN Ollama 服务可能未启动，请运行: ollama serve")
         except:
-            print(f"⚠️ 无法连接 Ollama ({self.base_url})，请确保 Ollama 已启动")
+            print(f"WARN 无法连接 Ollama ({self.base_url})，请确保 Ollama 已启动")
 
     def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
         response = self.requests.post(
@@ -287,7 +324,7 @@ class HuggingFaceBackend(BaseLLMBackend):
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        print(f"✓ 模型加载完成!")
+        print(f"OK 模型加载完成!")
 
     def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
         # 使用 chat template (如果模型支持)
@@ -362,6 +399,229 @@ class VLLMBackend(BaseLLMBackend):
         return self.chat([{"role": "user", "content": prompt}], **kwargs)
 
 
+class MockLLMBackend(BaseLLMBackend):
+    """Deterministic backend for classroom demos when live LLM APIs are unavailable."""
+
+    def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
+        system = messages[0].get("content", "") if messages else ""
+        prompt = "\n".join(str(message.get("content", "")) for message in messages)
+        return self._respond(system, prompt)
+
+    def generate(self, prompt: str, **kwargs) -> str:
+        return self._respond("", prompt)
+
+    def _respond(self, system: str, prompt: str) -> str:
+        text = f"{system}\n{prompt}".lower()
+        system_text = system.lower()
+
+        if "compile a final summary" in text:
+            return (
+                "SUMMARY:\n"
+                "- Built a factorial implementation with input validation.\n"
+                "- Reviewed the code and approved it.\n"
+                "- Generated and executed tests for normal, edge, and error cases.\n\n"
+                "FINAL CODE:\n"
+                "```python\n"
+                f"{self._factorial_function_code()}\n"
+                "```\n"
+            )
+
+        if "planner agent" in system_text:
+            return (
+                "ANALYSIS: Implement a small deterministic Python function and verify edge cases.\n\n"
+                "SUBTASKS:\n"
+                "1. Define factorial(n) for n >= 0.\n"
+                "2. Raise ValueError for negative input.\n"
+                "3. Add a short example printing factorial(5).\n"
+                "4. Review the implementation for correctness and maintainability.\n"
+                "5. Test base, normal, and error cases.\n\n"
+                "DEPENDENCIES: Coder -> Reviewer -> Tester.\n\n"
+                "IMPLEMENTATION_ORDER: Write code, review it, then run tests."
+            )
+
+        if "coder agent" in system_text:
+            return "```python\n" + self._factorial_function_code() + "\n```"
+
+        if "reviewer agent" in system_text:
+            return (
+                "CORRECTNESS: PASS - factorial handles 0, positive integers, and negative input.\n"
+                "ERROR_HANDLING: PASS - negative values raise ValueError.\n"
+                "CODE_QUALITY: PASS - iterative code is readable and avoids recursion depth issues.\n"
+                "SECURITY: PASS - no file, network, or shell access.\n\n"
+                "ISSUES:\n"
+                "- None.\n\n"
+                "SUGGESTIONS:\n"
+                "- Add tests for 0, 5, and negative input.\n\n"
+                "VERDICT: APPROVED"
+            )
+
+        if "tester agent" in system_text:
+            return (
+                "TEST_CASES:\n"
+                "1. factorial(0) == 1\n"
+                "2. factorial(5) == 120\n"
+                "3. factorial(-1) raises ValueError\n\n"
+                "TEST_CODE:\n"
+                "```python\n"
+                "assert factorial(0) == 1\n"
+                "assert factorial(5) == 120\n"
+                "try:\n"
+                "    factorial(-1)\n"
+                "    raise AssertionError('expected ValueError')\n"
+                "except ValueError:\n"
+                "    pass\n"
+                "print('All tests passed')\n"
+                "```\n\n"
+                "RESULTS:\n"
+                "- Test 1: PASS\n"
+                "- Test 2: PASS\n"
+                "- Test 3: PASS\n\n"
+                "SUMMARY: 3/3 tests passed"
+            )
+
+        if "debate moderator" in system_text or "moderator agent" in system_text:
+            return (
+                "ANALYSIS: Both sides made practical engineering arguments. "
+                "For an AI-heavy startup, Python wins on ecosystem depth and iteration speed; "
+                "Go wins on simple deployment and concurrency.\n\n"
+                "WINNER: Python (Django/FastAPI)\n\n"
+                "REASON: The stated startup context benefits more from AI/ML library access, "
+                "rapid prototyping, and hiring availability."
+            )
+
+        if "advocate" in system_text:
+            if "python" in system_text:
+                return (
+                    "Python is the stronger startup default when the product depends on AI, data, "
+                    "or rapid backend iteration. FastAPI gives clean APIs, Django gives batteries-included "
+                    "product scaffolding, and the ML ecosystem avoids cross-language glue early on."
+                )
+            return (
+                "Go is a strong startup choice when deployment simplicity, predictable concurrency, "
+                "and low operational overhead matter most. It produces small binaries and keeps runtime "
+                "behavior easy to reason about."
+            )
+
+        if "python code generator" in system_text or "return only executable python code" in text:
+            return "```python\n" + self._code_for_prompt(text) + "\n```"
+
+        if "够不够回答原始问题" in prompt:
+            if "医疗保险" in prompt:
+                return "INSUFFICIENT\n公司 医疗保险 员工福利 政策"
+            return "SUFFICIENT\n根据当前检索结果，可以回答问题；答案应严格基于知识库内容。"
+
+        if "改写一个更具体的 query" in prompt:
+            return "StarLink 套餐 价格 API 限流 员工福利 报销"
+
+        if "基于下面信息答" in prompt or "基于:" in prompt:
+            if "医疗保险" in prompt:
+                return "知识库没有检索到公司医疗保险政策的明确条款，建议标记为未收录并转人工确认。"
+            return "根据检索到的资料，可以给出一个基于知识库的简明回答；未覆盖的信息不应编造。"
+
+        if "observation:" in text:
+            if "15 * 7" in text:
+                return "Thought: I have the calculation result.\nFinal Answer: 15 days from Monday is Tuesday, and 15 * 7 = 105."
+            if "sqrt(144)" in text:
+                return "Thought: I have the calculation result.\nFinal Answer: sqrt(144) + 25 = 37."
+            if "current date and time" in text:
+                return "Thought: I have the current datetime observation.\nFinal Answer: Use the weekday shown in the observation as today's weekday."
+            if "weather" in text:
+                return "Thought: I have the weather observation.\nFinal Answer: The requested weather information is available in the observation."
+            if "python" in text:
+                return "Thought: I have enough search context.\nFinal Answer: Python is a readable, general-purpose programming language used for web development, automation, data science, and AI."
+            return "Thought: I have enough information from the observation.\nFinal Answer: Based on the observation, here is the answer."
+
+        if "15 * 7" in text:
+            return 'Thought: I need the arithmetic result.\nAction: calculator\nAction Input: {"expression": "15 * 7"}'
+
+        if "square root" in text or "sqrt" in text:
+            return 'Thought: I need a calculator for this expression.\nAction: calculator\nAction Input: {"expression": "sqrt(144) + 25"}'
+
+        if "weather" in text or "天气" in prompt:
+            return 'Thought: I need current weather data.\nAction: get_weather\nAction Input: {"city": "Tokyo"}'
+
+        if "day of the week" in text or "date" in text or "time" in text or "日期" in prompt or "时间" in prompt:
+            return "Thought: I need the current date and time.\nAction: get_datetime\nAction Input: {}"
+
+        if "python programming language" in text or "web search" in text or "搜索" in prompt:
+            return 'Thought: I should search for a concise definition.\nAction: web_search\nAction Input: {"query": "Python programming language"}'
+
+        return (
+            "Thought: This is a deterministic teaching mock response.\n"
+            "Final Answer: Mock LLM backend is active; use a real backend for open-ended generation."
+        )
+
+    def _factorial_function_code(self) -> str:
+        return '''def factorial(n: int) -> int:
+    """Return n! for n >= 0."""
+    if n < 0:
+        raise ValueError("n must be non-negative")
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result
+
+
+print(factorial(5))'''
+
+    def _code_for_prompt(self, text: str) -> str:
+        if "factorial of 10" in text:
+            return """result = 1
+for i in range(2, 11):
+    result *= i
+print(result)"""
+
+        if "fibonacci" in text:
+            return """numbers = [0, 1]
+while len(numbers) < 20:
+    numbers.append(numbers[-1] + numbers[-2])
+print(numbers[:20])"""
+
+        if "prime" in text and "50" in text:
+            return """def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(n ** 0.5) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+print([n for n in range(1, 51) if is_prime(n)])"""
+
+        if "standard deviation" in text or "statistics" in text or "median" in text:
+            return """import statistics
+
+numbers = [23, 45, 67, 89, 12, 34, 56, 78, 90, 11]
+print("Mean:", statistics.mean(numbers))
+print("Median:", statistics.median(numbers))
+print("Standard deviation:", statistics.stdev(numbers))
+print("Min:", min(numbers))
+print("Max:", max(numbers))"""
+
+        if "palindrome" in text:
+            return """import re
+
+def is_palindrome(s):
+    cleaned = re.sub(r"[^a-z0-9]", "", s.lower())
+    return cleaned == cleaned[::-1]
+
+for value in ["racecar", "hello", "A man a plan a canal Panama"]:
+    print(f"{value} -> {is_palindrome(value)}")"""
+
+        if "bubble sort" in text:
+            return """arr = [64, 34, 25, 12, 22, 11, 90]
+for i in range(len(arr)):
+    for j in range(0, len(arr) - i - 1):
+        if arr[j] > arr[j + 1]:
+            arr[j], arr[j + 1] = arr[j + 1], arr[j]
+print(arr)"""
+
+        if "print('test')" in text or 'print("test")' in text:
+            return "print('test')"
+
+        return "print('Mock code generation response')"
+
+
 # ==================== 便捷工厂函数 ====================
 
 def get_llm_backend(
@@ -373,7 +633,7 @@ def get_llm_backend(
     获取 LLM 后端实例
 
     Args:
-        backend: 后端类型 ("ollama", "dashscope", "openai", "huggingface", "vllm")
+        backend: 后端类型 ("ollama", "dashscope", "openai", "huggingface", "vllm", "mock")
         model: 模型名称
         **kwargs: 其他配置参数
 
@@ -385,7 +645,7 @@ def get_llm_backend(
         llm = get_llm_backend("ollama", model="qwen2.5:7b")
 
         # DashScope / 通义千问 (云端 API，推荐)
-        llm = get_llm_backend("dashscope", model="qwen-plus")
+        llm = get_llm_backend("dashscope", model=os.getenv("LLM_MODEL", "qwen-plus-2025-01-25"))
 
         # OpenAI
         llm = get_llm_backend("openai", model="gpt-3.5-turbo")
@@ -394,9 +654,10 @@ def get_llm_backend(
     default_models = {
         "openai": "gpt-3.5-turbo",
         "ollama": "qwen2.5:7b",
-        "dashscope": "qwen-plus",
+        "dashscope": os.getenv("LLM_MODEL", "qwen-plus-2025-01-25"),
         "huggingface": "Qwen/Qwen2.5-1.5B-Instruct",
         "vllm": "Qwen/Qwen2.5-7B-Instruct",
+        "mock": "deterministic-teaching-mock",
     }
 
     model = model or default_models.get(backend, "gpt-3.5-turbo")
@@ -409,6 +670,7 @@ def get_llm_backend(
         "huggingface": HuggingFaceBackend,
         "hf": HuggingFaceBackend,
         "vllm": VLLMBackend,
+        "mock": MockLLMBackend,
     }
 
     if backend not in backends:
@@ -427,8 +689,9 @@ def auto_detect_backend() -> BaseLLMBackend:
 
     # 1. 尝试 DashScope / 通义千问（推荐，阿里百炼）
     if os.getenv("DASHSCOPE_API_KEY"):
-        print("✓ 检测到 DASHSCOPE_API_KEY，使用通义千问 (qwen-plus)")
-        return get_llm_backend("dashscope", model="qwen-plus")
+        model_name = os.getenv("LLM_MODEL", "qwen-plus-2025-01-25")
+        print(f"OK 检测到 DASHSCOPE_API_KEY，使用通义千问 ({model_name})")
+        return get_llm_backend("dashscope", model=model_name)
 
     # 2. 尝试 Ollama（本地）
     try:
@@ -437,19 +700,19 @@ def auto_detect_backend() -> BaseLLMBackend:
             models = resp.json().get("models", [])
             if models:
                 model_name = models[0]["name"]
-                print(f"✓ 检测到 Ollama，使用模型: {model_name}")
+                print(f"OK 检测到 Ollama，使用模型: {model_name}")
                 return get_llm_backend("ollama", model=model_name)
     except:
         pass
 
     # 3. 尝试 OpenAI
     if os.getenv("OPENAI_API_KEY"):
-        print("✓ 检测到 OPENAI_API_KEY，使用 OpenAI")
+        print("OK 检测到 OPENAI_API_KEY，使用 OpenAI")
         return get_llm_backend("openai")
 
     # 4. 使用 HuggingFace (总是可用，但需要下载模型)
-    print("⚠️ 未检测到 API Key，使用 HuggingFace 本地模型 (首次运行需要下载)")
-    print("💡 推荐设置 DASHSCOPE_API_KEY 使用阿里百炼: https://dashscope.console.aliyun.com/")
+    print("WARN 未检测到 API Key，使用 HuggingFace 本地模型 (首次运行需要下载)")
+    print("提示: 推荐设置 DASHSCOPE_API_KEY 使用阿里百炼: https://dashscope.console.aliyun.com/")
     return get_llm_backend("huggingface", model="Qwen/Qwen2.5-0.5B-Instruct")
 
 
@@ -471,10 +734,13 @@ if __name__ == "__main__":
     # 测试 DashScope (如果配置了 API Key)
     if os.getenv("DASHSCOPE_API_KEY"):
         try:
-            llm = get_llm_backend("dashscope", model="qwen-plus")
+            llm = get_llm_backend(
+                "dashscope",
+                model=os.getenv("LLM_MODEL", "qwen-plus-2025-01-25"),
+            )
             response = llm.chat([{"role": "user", "content": "Say 'Hello' in one word."}])
             print(f"\nDashScope 测试: {response}")
         except Exception as e:
             print(f"\nDashScope 不可用: {e}")
 
-    print("\n✓ LLM Backend 模块加载成功!")
+    print("\nOK LLM Backend 模块加载成功!")
