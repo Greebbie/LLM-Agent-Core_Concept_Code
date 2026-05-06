@@ -1,31 +1,28 @@
-# SQL Query Patterns（参考）
+# SQL Query Patterns
 
-当 `query_order` / `check_inventory` 等简单 tool 不够时，可以参考下面的模式手写
-SQL（如果 MCP server 暴露了 `run_sql` 这种 tool）。
+Use these patterns only if a future MCP server exposes a safe parameterized SQL tool such as `run_sql`. The current demo server intentionally exposes narrow tools instead of raw SQL.
 
-> **本文档由 progressive disclosure 按需加载** — Claude 只在 query 涉及『复杂条件 / 聚合 / 跨表』时才读这个文件。
-
-## 1. 按时间范围查订单
+## 1. Orders By Time Range
 
 ```sql
 SELECT order_id, customer, total
 FROM orders
-WHERE created_at BETWEEN '2026-04-01' AND '2026-04-30'
-  AND status = 'shipped'
+WHERE created_at BETWEEN :start_date AND :end_date
+  AND status = :status
 ORDER BY created_at DESC
 LIMIT 100;
 ```
 
-## 2. 库存预警（quantity < 阈值）
+## 2. Low Inventory Alert
 
 ```sql
 SELECT sku, name, quantity
 FROM inventory
-WHERE quantity < 10
+WHERE quantity < :threshold
 ORDER BY quantity ASC;
 ```
 
-## 3. 客户订单聚合
+## 3. Customer Spend Summary
 
 ```sql
 SELECT customer,
@@ -34,12 +31,12 @@ SELECT customer,
 FROM orders
 WHERE status IN ('shipped', 'delivered')
 GROUP BY customer
-HAVING total_spent > 1000
+HAVING SUM(total) > :min_total
 ORDER BY total_spent DESC;
 ```
 
-## 注意事项
+## Notes
 
-- 永远使用参数化查询，不要字符串拼接
-- 大数据查询加 `LIMIT`，避免一次返回数百万行
-- 数字比较时注意类型（VARCHAR 排序 ≠ INT 排序）
+- Always use parameterized queries. Do not concatenate user input into SQL strings.
+- Add `LIMIT` for exploratory queries.
+- Check numeric types before comparing or sorting.

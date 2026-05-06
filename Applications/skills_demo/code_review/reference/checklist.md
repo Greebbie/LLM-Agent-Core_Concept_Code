@@ -1,42 +1,42 @@
 # Team Code Review Checklist
 
-Apply each section to the changes under review. Loaded **on demand** by Claude — no need to read every time.
+Load this checklist only when a detailed review is needed.
 
-## 1. 命名（Naming）
+## 1. Naming
 
-- 函数 / 变量名表达意图，不需读实现就懂功能？
-- 缩写控制在团队公认范围（如 `db`, `cfg`, 不用 `usr`, `cnt`）？
-- 布尔变量用 `is_`, `has_`, `should_` 前缀？
+- Do function and variable names explain intent without reading the implementation?
+- Are abbreviations limited to team-standard terms such as `db`, `cfg`, or `ctx`?
+- Do boolean names use `is_`, `has_`, `can_`, or `should_` where helpful?
 
-## 2. 错误处理（Error Handling）
+## 2. Error Handling
 
-- 所有 IO / 网络 / 子进程都有 try/except？
-- 捕获时记录上下文（log + 重新抛出 / 用户友好消息）？
-- 没有空 `except: pass` 隐藏问题？
-- 资源清理用 context manager（`with`）？
+- Are IO, network, subprocess, and parsing boundaries handled explicitly?
+- Are exceptions logged or returned with enough context to debug?
+- Is there any empty `except: pass` that hides real failures?
+- Are resources closed through context managers?
 
-## 3. 测试（Tests）
+## 3. Tests
 
-- 新代码至少有 1 个 happy path 测试？
-- 边界 case（空输入 / 大输入 / 异常）覆盖了？
-- 测试断言**有意义**（不是 `assert True`）？
-- Mock 没过度使用（容易和真实行为脱节）？
+- Is there at least one meaningful happy-path test?
+- Are boundary cases covered: empty input, large input, malformed input, unavailable dependency?
+- Do assertions prove behavior rather than just executing code?
+- Are mocks close enough to real behavior to catch regressions?
 
-## 4. 文档（Docs）
+## 4. Documentation
 
-- 公共 API 有 docstring（参数 + 返回 + 异常）？
-- 复杂逻辑有内联注释**讲为什么**（不是讲做什么）？
-- README / CHANGELOG 跟着代码同步更新？
+- Do public functions have docstrings when the behavior is not obvious?
+- Are complex blocks commented for why the approach exists, not just what each line does?
+- Did README or usage docs change when the behavior changed?
 
-## 5. 安全（Security）
+## 5. Security
 
-- 输入验证在边界处做了？
-- 没有 SQL 拼接 / shell 拼接？
-- 密钥 / 密码不在代码里（用环境变量 / vault）？
-- 第三方依赖检查过 CVE？
+- Is untrusted input validated at the boundary?
+- Is there any SQL or shell command built by string concatenation?
+- Are secrets loaded from environment variables rather than committed files?
+- Are dependency and file-system assumptions clear?
 
-## 6. 性能（Performance）
+## 6. Performance
 
-- 循环里没重复 IO（提到外面 / 用 batch）？
-- 大数据用 generator 而非 list comprehension？
-- 数据库查询有 index / 没 N+1？
+- Is repeated IO avoided inside hot loops?
+- Are large datasets streamed or batched where appropriate?
+- Are expensive model calls cached or gated when repeated?

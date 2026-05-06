@@ -437,8 +437,6 @@ LLM-Agent-Core_Concept_Code/
 │   ├── eval_dataset.jsonl                 # Capstone 评测集（App8 配套）
 │   ├── custom_sft_*.jsonl / custom_dpo_*.jsonl    # 自建 GPT 路线 B 数据
 │   ├── gpt2_sft_*.jsonl                   # GPT-2 路线 A 数据
-│   ├── _download_pretrain_corpus.py       # 中文 Wikipedia 抽样下载脚本
-│   ├── _build_eval_zh_extended.py         # 评估集构建脚本
 │   ├── _archive/                          # 归档：未被当前 notebook 引用
 │   └── README.md
 ├── teaching/                              # 讲师教案（Ch* / App* / CGT_* 配套）
@@ -449,7 +447,7 @@ LLM-Agent-Core_Concept_Code/
 └── README.md
 ```
 
-> **数据说明**：`data/pretrain_corpus_zh.txt` 与 `data/eval_zh_extended.jsonl` 是 codex 升级后用于教学演示的真实语料与评测集；首次运行 Ch7/Custom_02 前若文件不存在，跑 `python data/_download_pretrain_corpus.py` 自动构建。详见 [`data/README.md`](./data/README.md)。
+> **数据说明**：`data/pretrain_corpus_zh.txt` 与 `data/eval_zh_extended.jsonl` 已随仓库提供，分别用于 Ch7 / Custom_02 的预训练演示和 App8 / Bonus_B 的扩展评测。详见 [`data/README.md`](./data/README.md)。
 
 ---
 

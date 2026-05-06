@@ -1,6 +1,6 @@
 ---
 name: enterprise-knowledge-assistant
-description: 企业知识助手：回答 HR 政策、产品、技术 API、订单/库存等内部问题。生产版先用确定性规则识别 ORD/SKU/通知等强结构请求，再在 RAG、MCP tools、direct LLM 之间路由。Use for company-internal policy/product/API/order questions.
+description: Company-internal assistant for HR policy, product pricing, technical API docs, and order/inventory/notification workflows. Use deterministic guards for ORD/SKU/notification requests before routing between RAG, MCP tools, and direct answers.
 allowed-tools: [mcp__enterprise-demo__query_order, mcp__enterprise-demo__check_inventory, mcp__enterprise-demo__send_notification]
 model: claude-3-5-sonnet
 version: "1.0"
@@ -8,49 +8,45 @@ version: "1.0"
 
 # Enterprise Knowledge Assistant Skill
 
-The full Day-5-Capstone packaged as a reusable Skill. This is the **"5 天合体"**
-deliverable: Multi-Agent + MCP + Agentic RAG + LLMOps wrapped into a single
-folder you can drop into `~/.claude/skills/` or any Claude Agent SDK project.
+This is the Day 5 capstone packaged as a reusable Skill. It combines RAG, deterministic route guards, MCP tool calls, review, and evaluation. The teaching point is not "write a bigger prompt"; it is defining clear boundaries and verifying them with eval cases.
 
 ## Architecture
 
-```
+```text
 User question
-    ↓
-Route guard + PlannerAgent (decides path: rag / mcp / direct)
-    ↓
-┌────────────────┬─────────────────┬────────────────┐
-│  Agentic RAG   │  MCP tool call  │  Direct answer │
-│  (Hybrid+Self) │  (订单/库存等)   │                │
-└────────────────┴─────────────────┴────────────────┘
-    ↓
-ReviewerAgent (quality check)
-    ↓
-Final answer
+  -> Route guards + PlannerAgent
+  -> one of:
+       - Agentic RAG for HR/product/API knowledge
+       - MCP tool call for orders, inventory, notifications
+       - Direct answer or safe refusal
+  -> ReviewerAgent quality check
+  -> Final answer
 ```
 
-All steps wrapped in Langfuse-compatible `@observe` for trace + token tracking.
-Full architecture details: `reference/architecture.md` (loaded on demand).
+All major steps are wrapped with Langfuse-compatible `@observe` spans. Full implementation notes are in `reference/architecture.md`.
 
-## When to use
+## When To Use
 
-- "What is the company's leave policy?"
-- "Look up order ORD-002"
-- "How does the API rate limit work?"
-- "Hi, can you help me?"
+- "入职 7 年有几天年假？"
+- "API 限流是多少？"
+- "StarLink 企业版多少钱？"
+- "查订单 ORD-002"
+- "SKU-A100 库存还有多少？"
 
-The skill auto-routes. Strong identifiers (`ORD-*`, `SKU-*`, notification intent)
-are handled by deterministic guards before falling back to the LLM Planner.
+The skill should refuse or defer when the knowledge base does not cover the topic, rather than guessing.
 
-## How to invoke programmatically
+## Programmatic Entry Point
 
 ```python
 from pipeline import upgraded_pipeline
+
 result = upgraded_pipeline("入职 7 年有几天年假？")
+print(result["path"])
 print(result["answer"])
 ```
 
-Returns:
+Return shape:
+
 ```python
 {
     "path": "rag" | "mcp" | "direct",
@@ -61,29 +57,20 @@ Returns:
 
 ## Evaluation
 
-`eval.py` provides `batch_eval(dataset_path)` returning success rate +
-per-category accuracy. See `reference/eval_cases.jsonl` for default cases.
+`eval.py` provides `batch_eval(dataset_path)` and `reference/eval_cases.jsonl` contains the default teaching eval set. The eval is intentionally small; its purpose is to catch routing and grounding regressions during the course.
 
 ## Configuration
 
-Required environment variables:
-
 ```bash
-DASHSCOPE_API_KEY=           # fill with your own key, or use another LLM provider
+DASHSCOPE_API_KEY=           # fill with your own key
 LLM_BACKEND=dashscope
 EMBEDDING_BACKEND=dashscope
-LANGFUSE_PUBLIC_KEY=         # optional — falls back to MockObserver
+LANGFUSE_PUBLIC_KEY=         # optional; falls back to MockObserver
 LANGFUSE_SECRET_KEY=         # optional
 ```
 
 ## Limitations
 
-- Knowledge base is hardcoded in `pipeline.py:KNOWLEDGE_DOCS` (production should load from external store)
-- MCP server runs in-process — production should use stdio transport to remote
-- No auth / multi-tenant isolation — add before exposing to real users
-
-## Versioning
-
-- `0.x`: development
-- `1.0`: trained on 5-day Capstone, ready for internal demo
-- `2.0+`: future — include Vision / Voice / Reasoning models
+- The demo knowledge base is in `pipeline.py:KNOWLEDGE_DOCS`; production should load documents from a managed store.
+- The MCP server is local and educational; production should add auth, audit logs, and tenant isolation.
+- The reviewer is a lightweight quality gate, not a formal safety system.

@@ -1,12 +1,12 @@
 """Enterprise Knowledge Assistant packaged pipeline.
 
-This is the Day 5 production capstone extracted from the notebook.  The key
+This is the Day 5 production capstone extracted from the notebook. The key
 lesson is not "make the prompt longer"; it is showing a real before/after:
 
-- baseline_rag_pipeline: always uses retrieval
-- llm_planner_pipeline: lets the LLM decide the route
-- production_pipeline: keeps the LLM, but adds deterministic routing guards for
-  high-signal business identifiers such as ORD-* and SKU-*
+- baseline_rag_pipeline: always uses retrieval.
+- llm_planner_pipeline: lets the LLM decide the route.
+- production_pipeline: adds deterministic routing guards for high-signal
+  business identifiers such as ORD-* and SKU-*.
 
 `upgraded_pipeline` is kept as the public Skill entrypoint and points to the
 production version.
@@ -19,14 +19,18 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_here = Path(__file__).resolve()
+_package_root = _here.parents[2]  # Applications/ or enterprise_5days/
+
 # Locate course root so utils/ is importable regardless of cwd.
-_root = Path(__file__).resolve().parent
+_root = _here.parent
 for _ in range(5):
     if (_root / "utils").is_dir() and (_root / "data").is_dir():
         break
     _root = _root.parent
 sys.path.insert(0, str(_root))
 sys.path.insert(0, str(_root / "utils"))
+sys.path.insert(0, str(_package_root / "mcp_server_demo"))
 sys.path.insert(0, str(_root / "mcp_server_demo"))
 
 from utils.config import setup
@@ -42,13 +46,13 @@ embedder = env.get_embedder()
 
 
 KNOWLEDGE_DOCS = [
-    {"id": "hr_01", "text": "公司年假政策：入职 5 年以下每年 5 天，5-10 年 10 天，10 年以上 15 天。", "category": "hr"},
-    {"id": "hr_02", "text": "病假需出示三甲医院证明，全薪连续不超过 30 天。", "category": "hr"},
+    {"id": "hr_01", "text": "公司年假政策：入职 5 年以下每年 5 天，5-10 年每年 10 天，10 年以上每年 15 天。", "category": "hr"},
+    {"id": "hr_02", "text": "病假需出示三甲医院证明，连续不超过 30 天时按全薪处理。", "category": "hr"},
     {"id": "tech_01", "text": "API 限流：免费版 60 req/min，企业版 6000 req/min。", "category": "tech"},
-    {"id": "tech_02", "text": "API 鉴权使用 Bearer Token；token 由 CONSOLE 生成，30 天过期。", "category": "tech"},
-    {"id": "tech_03", "text": "出现 429 (Too Many Requests) 时建议指数退避重试。", "category": "tech"},
-    {"id": "prod_01", "text": "StarLink 基础版 199 元/月，5 路并发；企业版 1999 元/月，100 路并发。", "category": "product"},
-    {"id": "prod_03", "text": "SKU-A100 是 StarLink 入门套件，包含 1 个网关 + 5 个传感器，售价 4999 元。", "category": "product"},
+    {"id": "tech_02", "text": "API 鉴权使用 Bearer Token；token 由 Console 生成，30 天过期。", "category": "tech"},
+    {"id": "tech_03", "text": "出现 429 Too Many Requests 时，建议使用指数退避并重试。", "category": "tech"},
+    {"id": "prod_01", "text": "StarLink 基础版 199 元/月，支持 5 路并发；企业版 1999 元/月，支持 100 路并发。", "category": "product"},
+    {"id": "prod_03", "text": "SKU-A100 是 StarLink 入门套件，包含 1 个网关和 5 个传感器，售价 4999 元。", "category": "product"},
 ]
 
 vector_store = SimpleVectorStore(embedding_backend=embedder)
@@ -65,22 +69,29 @@ mcp_client = EduMCPClient(user_id="capstone-skill")
 mcp_client.connect(mcp_server)
 
 
-PLANNER_PROMPT = """你是路由 Planner。判断用户问题应走哪条路径，输出 JSON：
-- 知识/文档/政策/产品/API 类 -> {"path": "rag"}
-- 订单/库存/通知 -> {"path": "mcp"}
-- 闲聊/无法判断 -> {"path": "direct"}
-只输出 JSON。"""
+PLANNER_PROMPT = """你是企业助手的路由 Planner。判断用户问题应该走哪条路径，并且只输出 JSON。
+
+规则：
+- HR 政策、产品价格、技术 API 文档 -> {"path": "rag"}
+- 订单、库存、通知 -> {"path": "mcp"}
+- 闲聊或无法判断 -> {"path": "direct"}
+
+只输出 JSON，不要解释。
+"""
 
 RAG_PROMPT = """你是 RAG Worker。只能基于检索到的文档回答。
-如果文档不覆盖问题，明确说「知识库未覆盖」，不要编造。"""
+如果文档没有覆盖问题，明确说“知识库未覆盖”，不要编造。
+"""
 
-REVIEWER_PROMPT = """你是回答审查者。
-判断回答是否正面回答、是否基于已给信息、长度是否适中。
-APPROVE 或 REJECT，附一句理由。"""
+REVIEWER_PROMPT = """你是回答审查者。判断回答是否正面回答、是否基于已给信息、长度是否适中。
+输出 APPROVE 或 REJECT，并附一句理由。
+"""
 
 MCP_WORKER_PROMPT = """可用 MCP tools: {tools}
 用户问题: {query}
-请输出 JSON: {{"tool": "...", "arguments": {{...}}}}。只输出 JSON。"""
+
+请输出 JSON: {{"tool": "...", "arguments": {{...}}}}。只输出 JSON。
+"""
 
 planner = BaseAgent("Planner", llm, PLANNER_PROMPT, temperature=0.0)
 rag_worker = BaseAgent("RAGWorker", llm, RAG_PROMPT, temperature=0.1)
@@ -101,7 +112,7 @@ SUPPORTED_RAG_TERMS = [
     "年假", "病假", "限流", "鉴权", "Bearer", "token", "429",
     "StarLink", "基础版", "企业版", "SKU-A100", "API",
 ]
-UNSUPPORTED_COMPANY_TERMS = ["医疗保险", "加班补贴", "团建", "报销", "福利", "公司有"]
+UNSUPPORTED_COMPANY_TERMS = ["医疗保险", "加班补贴", "团建", "报销", "福利", "公司有没有"]
 
 
 def _is_supported_rag_query(query: str) -> bool:
@@ -163,10 +174,7 @@ def _fallback_mcp_plan(query: str) -> dict[str, Any] | None:
         return {"tool": "check_inventory", "arguments": {"sku": sku.group(0)}}
     notify = re.search(r"(?:通知|提醒|告知)\s*([A-Za-z][\w-]*)", query)
     if notify:
-        return {
-            "tool": "send_notification",
-            "arguments": {"user_id": notify.group(1), "message": query},
-        }
+        return {"tool": "send_notification", "arguments": {"user_id": notify.group(1), "message": query}}
     return None
 
 
@@ -210,7 +218,7 @@ def mcp_branch(query: str) -> str:
 @observe("skill.direct")
 def direct_branch(query: str) -> str:
     if any(term in query for term in UNSUPPORTED_COMPANY_TERMS):
-        return "当前知识库未覆盖这个问题，不能确认是否有相关政策；建议联系 HR 或系统管理员补充文档后再答复。"
+        return "当前知识库未覆盖这个问题，无法确认是否有相关政策；建议联系 HR 或系统管理员补充文档后再答复。"
     return llm.generate(f"用一两句话简短回答: {query}", temperature=0.3).strip()
 
 

@@ -1,17 +1,12 @@
 """Test client for the demo MCP server.
 
 Three modes:
-- Stdio JSON-RPC (DEFAULT): spawns server.py as subprocess, talks JSON-RPC over stdio.
-                            This is what real MCP clients do at the wire level.
-- Real MCP SDK: only if `mcp` Python pkg installed (Python 3.10+).
-- In-process Edu mode: imports server in same process (no transport).
-
-Usage:
-    python client_test.py                # auto: stdio JSON-RPC (production-flavor)
-    python client_test.py --inproc       # in-process (fastest demo)
-    python client_test.py --sdk          # real Anthropic mcp SDK if available
+- Stdio JSON-RPC (default): spawns server.py as a subprocess and talks JSON-RPC over stdio.
+- Real MCP SDK: used only when the `mcp` package is installed.
+- In-process Edu mode: imports the server in the same process for a fast classroom demo.
 """
 from __future__ import annotations
+
 import asyncio
 import json
 import subprocess
@@ -24,7 +19,6 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-# Walk up to find course/repo root containing utils/ and data/.
 _root = Path(__file__).resolve().parent
 for _ in range(5):
     if (_root / "utils").is_dir() and (_root / "data").is_dir():
@@ -34,9 +28,6 @@ sys.path.insert(0, str(_root))
 from utils.mcp_helpers import EduMCPClient, MCP_AVAILABLE
 
 
-# ============================================================
-# Stdio JSON-RPC client - talks to server.py via subprocess pipes
-# ============================================================
 class StdioJsonRpcClient:
     """Real subprocess + stdio JSON-RPC client. Same wire pattern as official MCP."""
 
@@ -53,9 +44,8 @@ class StdioJsonRpcClient:
             stderr=subprocess.PIPE,
             text=True,
             encoding="utf-8",
-            bufsize=1,  # line-buffered
+            bufsize=1,
         )
-        # Give server a moment to start
         time.sleep(0.3)
         return self
 
@@ -72,14 +62,13 @@ class StdioJsonRpcClient:
                 self.proc.kill()
 
     def request(self, method: str, params: dict | None = None) -> dict:
-        """Send a JSON-RPC request, return the result (or raise on error)."""
+        """Send one JSON-RPC request and return the result."""
         self._req_id += 1
         req = {"jsonrpc": "2.0", "id": self._req_id, "method": method, "params": params or {}}
         line = json.dumps(req, ensure_ascii=False) + "\n"
         assert self.proc is not None and self.proc.stdin is not None
         self.proc.stdin.write(line)
         self.proc.stdin.flush()
-        # Read one response line
         assert self.proc.stdout is not None
         resp_line = self.proc.stdout.readline()
         if not resp_line:
@@ -90,36 +79,32 @@ class StdioJsonRpcClient:
         return resp.get("result", {})
 
 
-def stdio_test():
-    """真起一个独立 server 进程，通过 stdio JSON-RPC 通信。"""
+def stdio_test() -> None:
+    """Start an independent server process and communicate over stdio JSON-RPC."""
     server_script = Path(__file__).parent / "server.py"
     print("-" * 60)
     print("Stdio JSON-RPC client (real subprocess + protocol)")
     print("-" * 60)
     with StdioJsonRpcClient(server_script) as client:
-        # 1. Initialize handshake
         info = client.request("initialize")
         print(f"\n[OK] Initialized: {info['server_info']['name']} v{info['server_info']['version']}")
         print(f"   Protocol: {info['protocol_version']}")
 
-        # 2. List tools
         tools = client.request("tools/list")
         print(f"\n[TOOLS] {len(tools['tools'])} tools listed:")
         for t in tools["tools"]:
             print(f"  - {t['name']}: {t['description']}")
 
-        # 3. Call query_order
         print("\n[CALL] query_order(order_id='ORD-001') ...")
         result = client.request("tools/call", {"name": "query_order", "arguments": {"order_id": "ORD-001"}})
         print(f"   <- {result['content'][0]['text']}")
 
-        # 4. Call check_inventory
         print("\n[CALL] check_inventory(sku='SKU-A100') ...")
         result = client.request("tools/call", {"name": "check_inventory", "arguments": {"sku": "SKU-A100"}})
         print(f"   <- {result['content'][0]['text']}")
 
 
-async def real_mcp_test():
+async def real_mcp_test() -> None:
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
 
@@ -131,7 +116,7 @@ async def real_mcp_test():
         async with ClientSession(read, write) as session:
             await session.initialize()
             print("-" * 60)
-            print("Real Anthropic MCP SDK client")
+            print("Real MCP SDK client")
             print("-" * 60)
 
             tools = await session.list_tools()
@@ -144,8 +129,9 @@ async def real_mcp_test():
             print(f"   <- {result.content[0].text if result.content else result}")
 
 
-def inproc_test():
+def inproc_test() -> None:
     from server import build_server
+
     server = build_server()
     client = EduMCPClient(user_id="demo_user")
     client.connect(server)
@@ -170,5 +156,4 @@ if __name__ == "__main__":
         else:
             asyncio.run(real_mcp_test())
     else:
-        # Default: stdio JSON-RPC (real subprocess + protocol)
         stdio_test()

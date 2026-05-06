@@ -1,13 +1,13 @@
 {"query": "入职 7 年的员工有几天年假？", "expected_keywords": ["10", "天"], "category": "hr"}
-{"query": "病假怎么算？要什么材料？", "expected_keywords": ["医院证明", "全薪"], "category": "hr"}
+{"query": "病假怎么算？需要什么材料？", "expected_keywords": ["医院证明", "全薪"], "category": "hr"}
 {"query": "API 限流是多少？", "expected_keywords": ["60", "6000", "req"], "category": "tech"}
 {"query": "API 鉴权用什么方式？token 多久过期？", "expected_keywords": ["Bearer", "30 天"], "category": "tech"}
 {"query": "出现 429 错误怎么办？", "expected_keywords": ["指数退避", "重试"], "category": "tech"}
 {"query": "StarLink 基础版多少钱？", "expected_keywords": ["199", "月"], "category": "product"}
-{"query": "StarLink 企业版价格 + 并发是多少？", "expected_keywords": ["1999", "100"], "category": "product"}
+{"query": "StarLink 企业版价格和并发是多少？", "expected_keywords": ["1999", "100"], "category": "product"}
 {"query": "SKU-A100 是什么？多少钱？", "expected_keywords": ["StarLink", "4999"], "category": "product"}
 {"query": "查订单 ORD-002 的状态和金额", "expected_keywords": ["pending", "89", "bob"], "category": "mcp"}
 {"query": "SKU-A100 库存还有多少？", "expected_keywords": ["SKU-A100", "35", "in_stock"], "category": "mcp"}
-{"query": "公司有医疗保险吗？", "expected_keywords": ["未覆盖", "无", "建议"], "category": "ood"}
-{"query": "如何申请加班补贴？", "expected_keywords": ["未", "建议", "无"], "category": "ood"}
+{"query": "公司有医疗保险吗？", "expected_keywords": ["未覆盖", "无法确认", "建议"], "category": "ood"}
+{"query": "如何申请加班补贴？", "expected_keywords": ["未覆盖", "建议", "无法确认"], "category": "ood"}
 {"query": "你好", "expected_keywords": ["你好", "您好", "hi"], "category": "direct"}
