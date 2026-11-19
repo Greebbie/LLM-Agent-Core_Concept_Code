@@ -287,6 +287,8 @@ class OllamaEmbeddingBackend(BaseEmbeddingBackend):
             embeddings.append(response.json()["embedding"])
 
         result = np.array(embeddings)
+        if embeddings:
+            self.config.dimension = result.shape[1]
 
         if self.config.normalize:
             norms = np.linalg.norm(result, axis=1, keepdims=True)

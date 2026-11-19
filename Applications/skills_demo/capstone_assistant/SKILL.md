@@ -8,8 +8,6 @@ version: "1.0"
 
 # Enterprise Knowledge Assistant Skill
 
-This is the Day 5 capstone packaged as a reusable Skill. It combines RAG, deterministic route guards, MCP tool calls, review, and evaluation. The teaching point is not "write a bigger prompt"; it is defining clear boundaries and verifying them with eval cases.
-
 ## Architecture
 
 ```text

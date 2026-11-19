@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 from pathlib import Path
+from answer_checks import matches_facts
 from pipeline import upgraded_pipeline  # type: ignore
 
 
@@ -13,7 +14,7 @@ def batch_eval(dataset_path: str | Path) -> dict:
     for it in items:
         out = upgraded_pipeline(it["query"])
         answer = out.get("answer", "")
-        ok = any(kw.lower() in answer.lower() for kw in it["expected_keywords"])
+        ok = matches_facts(answer, it)
         cat = it["category"]
         cat_total[cat] = cat_total.get(cat, 0) + 1
         if ok:

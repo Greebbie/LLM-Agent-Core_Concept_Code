@@ -67,15 +67,9 @@ class GPTConfig:
     @property
     def num_params(self) -> int:
         """Estimate number of parameters."""
-        # Embedding: vocab_size * d_model
-        embed_params = self.vocab_size * self.d_model
-        # Position embedding: max_seq_len * d_model
-        pos_params = self.max_seq_len * self.d_model
-        # Each layer: attention (4 * d_model^2) + ffn (2 * d_model * d_ff) + norms
-        layer_params = 4 * self.d_model ** 2 + 2 * self.d_model * self.d_ff + 4 * self.d_model
-        total_layer_params = self.n_layers * layer_params
-        # Output projection: d_model * vocab_size (shared with embedding)
-        return embed_params + pos_params + total_layer_params
+        # Shared token embeddings, four attention projections and three SwiGLU matrices.
+        layer_params = 4 * self.d_model**2 + 3 * self.d_model * self.d_ff + 2 * self.d_model
+        return self.vocab_size * self.d_model + self.n_layers * layer_params + self.d_model
 
 
 # =============================================================================
@@ -465,7 +459,7 @@ class CustomGPT(nn.Module):
         if attention_mask is not None:
             # [batch, seq] -> [batch, 1, 1, seq]
             attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
-            attention_mask = (1.0 - attention_mask) * -10000.0
+            attention_mask = (attention_mask == 0).to(self.embed_tokens.weight.dtype) * -10000.0
 
         # Embed tokens
         hidden_states = self.embed_tokens(input_ids)
@@ -526,12 +520,8 @@ class CustomGPT(nn.Module):
             eos_token_id = self.config.eos_token_id
 
         for _ in range(max_new_tokens):
-            # Truncate if too long
-            if input_ids.shape[1] >= self.config.max_seq_len:
-                input_ids = input_ids[:, -self.config.max_seq_len:]
-
-            # Forward pass
-            outputs = self(input_ids)
+            # Crop only the context fed to the model. Keep the entire generated sequence.
+            outputs = self(input_ids[:, -self.config.max_seq_len:])
             logits = outputs["logits"][:, -1, :]  # [batch, vocab]
 
             # Apply temperature

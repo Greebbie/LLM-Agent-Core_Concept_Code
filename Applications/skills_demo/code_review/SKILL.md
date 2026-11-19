@@ -7,8 +7,6 @@ version: "0.2"
 
 # Code Review Skill
 
-A pragmatic code reviewer for Python projects. It combines static checks with a team checklist, then returns prioritized findings instead of generic advice.
-
 ## When To Use
 
 - "Review this PR / file / function"

@@ -1,10 +1,5 @@
 # 架构全景图
 
-本文是 **Ch 主线 → Applications → utils 后端** 三层学习路径的全景图。
-目的：让你在跳进任何一个 notebook 前，先看清它在整张图里的位置。
-
----
-
 ## 三层关系
 
 ```
@@ -16,7 +11,7 @@
                               ▼
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Layer 2 · Applications/App1–App8                                    │
-│  把 Ch 学到的能力组合成可运行的工业级案例；每个 App 一个垂直主题     │
+│  ReAct、文档检索、代码执行、工具协议和综合实验                       │
 └──────────────────────────────────────────────────────────────────────┘
                               │  调用
                               ▼
@@ -29,16 +24,15 @@
 
 ---
 
-## Ch 主线 → App 的"概念落地"映射
+## 章节与实验
 
-| 主线章节 | 教什么 | 落地到 |
+| 主线章节 | 主题 | 对应实验 |
 |---|---|---|
-| Ch01–Ch07 | Autograd / Embedding / Attention / Transformer / Tokenizer / Pretraining | 是后续 Apps 的"白盒底座"，所有 Apps 假设你看过这些 |
-| Ch08–Ch10 | SFT / LoRA / DPO（Route A） | App1–App8 选择 LLM 后端时背后机制的解释 |
-| Ch11 | KV Cache | 推理优化直觉 |
-| Ch12 | Agent & RAG 原理 | **App1–App8 的直接前置**——读完 Ch12 再做 Apps |
+| Ch01–Ch07 | Autograd / Embedding / Attention / Transformer / Tokenizer / Pretraining | [组装 GPT](../Ch5_GPT_Assembly/Ch5_GPT_Assembly.ipynb)、[预训练](../Ch7_Pretraining/Ch7_Pretraining.ipynb) |
+| Ch08–Ch10 | SFT / LoRA / DPO（Route A） | [工单分类](../Ch8_SFT/Ch8_SFT.ipynb)、[展馆问答](../Ch10_DPO/Ch10_DPO.ipynb) |
+| Ch11 | KV Cache | [比较有无缓存的增量推理](../Ch11_KV_Cache/Ch11_KV_Cache.ipynb) |
+| Ch12 | Agent & RAG 原理 | [App1 工具调用](../Applications/App1_ReAct_Agent.ipynb)、[App2 文档检索](../Applications/App2_RAG_System.ipynb) |
 
-> 后续将新增 Ch13/14/15（骨架已就位）：Multi-Agent / MCP / LLMOps，作为 App4/App5/App7 的概念章。
 
 ---
 
@@ -68,13 +62,11 @@ Ch12 (前置)
                         └────────────────────┘
 ```
 
-App1–App8 覆盖 ReAct / RAG / Code / Multi-Agent / MCP / Skills / LLMOps / Capstone。不同学习目标对应不同最短路径——见末尾的"读这门课的最短路径"表格。
-
 ---
 
 ## utils/ 与 Apps 的引用矩阵
 
-| utils 模块 | 主要消费者（Apps） | 干什么 |
+| utils 模块 | 使用该模块的 App | 干什么 |
 |---|---|---|
 | `config.py` | 全部 Apps | 统一 .env 加载 + LLM/Embedding 后端工厂 |
 | `llm_backend.py` | 全部 Apps | OpenAI / DashScope / Ollama / HF / vLLM 后端的统一接口 |
@@ -83,9 +75,6 @@ App1–App8 覆盖 ReAct / RAG / Code / Multi-Agent / MCP / Skills / LLMOps / Ca
 | `mcp_helpers.py` | App3, **App5**, App8 | `EduMCPServer/Client` + `tool_from_function` |
 | `observability.py` | App1, App4, **App7**, App8 | `@observe` + `MockObserver` + Langfuse fallback |
 | `skills_helpers.py` | **App6**, App8 | Anthropic Skills 解析 + 路由 + progressive disclosure |
-| `rag_patterns.py` _(规划中)_ | App2, App8 | Self-RAG / CRAG / Hybrid+RRF / Reranker / MMR |
-
-加粗 = 该 App 是这个 module 的"主战场"。
 
 ---
 
@@ -95,4 +84,4 @@ App1–App8 覆盖 ReAct / RAG / Code / Multi-Agent / MCP / Skills / LLMOps / Ca
 |---|---|
 | 只想跑通 Agent | App0 → Ch12 → App1 → App2 → App4 |
 | 想理解生产级 Agent 栈 | App0 → App1–App4 → App5 → App6 → App7 → App8 |
-| 学院派完整旅程 | Ch01–Ch12 → App1–App8 |
+| 从头学习 | Ch0–Ch12 → App1–App8 |

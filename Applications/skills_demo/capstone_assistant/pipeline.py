@@ -202,6 +202,8 @@ def mcp_branch(query: str) -> str:
     planner_source = "llm"
     try:
         plan = _extract_json_object(raw)
+        if not isinstance(plan.get("arguments"), dict):
+            raise ValueError("工具参数应为 JSON 对象")
     except Exception:
         plan = _fallback_mcp_plan(query)
         planner_source = "rule-fallback"

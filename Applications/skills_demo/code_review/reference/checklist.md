@@ -1,7 +1,5 @@
 # Team Code Review Checklist
 
-Load this checklist only when a detailed review is needed.
-
 ## 1. Naming
 
 - Do function and variable names explain intent without reading the implementation?

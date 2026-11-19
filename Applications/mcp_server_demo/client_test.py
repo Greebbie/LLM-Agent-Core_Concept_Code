@@ -82,9 +82,7 @@ class StdioJsonRpcClient:
 def stdio_test() -> None:
     """Start an independent server process and communicate over stdio JSON-RPC."""
     server_script = Path(__file__).parent / "server.py"
-    print("-" * 60)
-    print("Stdio JSON-RPC client (real subprocess + protocol)")
-    print("-" * 60)
+    print("JSON-RPC over stdio")
     with StdioJsonRpcClient(server_script) as client:
         info = client.request("initialize")
         print(f"\n[OK] Initialized: {info['server_info']['name']} v{info['server_info']['version']}")
@@ -115,9 +113,7 @@ async def real_mcp_test() -> None:
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            print("-" * 60)
-            print("Real MCP SDK client")
-            print("-" * 60)
+            print("MCP SDK over stdio")
 
             tools = await session.list_tools()
             print(f"\n[TOOLS] {len(tools.tools)} tools listed:")
@@ -135,9 +131,7 @@ def inproc_test() -> None:
     server = build_server()
     client = EduMCPClient(user_id="demo_user")
     client.connect(server)
-    print("-" * 60)
-    print("In-process Edu client (fastest, no transport)")
-    print("-" * 60)
+    print("In-process MCP client")
     tools = client.list_all_tools()
     print(f"\n[TOOLS] {len(tools)} tools:")
     for t in tools:

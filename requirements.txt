@@ -34,7 +34,7 @@ accelerate>=1.0,<2
 
 # Ollama (推荐用于本地，需要单独安装 Ollama 应用)
 # 安装: https://ollama.ai/download
-# 拉取模型: ollama pull qwen2.5:7b
+# 拉取模型: ollama pull qwen3:4b
 requests>=2.31,<3
 
 # -----------------------------------------------------------------------------
@@ -60,8 +60,8 @@ trl>=1.0,<2
 # Datasets (数据加载)
 datasets>=4.0,<5
 
-# bitsandbytes (量化，仅 Linux)
-# bitsandbytes>=0.41.0
+# bitsandbytes（可选量化，需匹配设备与后端）
+# bitsandbytes  # Ch9 可选的 4-bit 实验
 
 # -----------------------------------------------------------------------------
 # Jupyter 环境
@@ -88,7 +88,7 @@ pandas>=2.2,<4
 #
 # 2. 使用 Ollama (免费本地运行):
 #    - 下载安装: https://ollama.ai/download
-#    - 拉取模型: ollama pull qwen2.5:7b
+#    - 拉取模型: ollama pull qwen3:4b
 #    - 运行服务: ollama serve
 #
 # 3. 使用 OpenAI API:

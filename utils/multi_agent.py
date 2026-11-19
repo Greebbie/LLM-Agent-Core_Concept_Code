@@ -164,7 +164,7 @@ class Orchestrator:
                 next_agent = m.group(1)
                 if next_agent in self.agents and next_agent != current:
                     current = next_agent
-                    payload = text
+                    payload = f"原始问题：{task}\n转交说明：{text}"
                     path.append(current)
                     continue
             return {"final": text, "path": path, "hops": hop + 1}
@@ -181,26 +181,24 @@ class CircuitBreaker:
         self.opened_at: Optional[float] = None
 
     def call(self, fn: Callable, *args, **kwargs):
-        # Half-open check
-        if self.opened_at is not None:
-            if time.time() - self.opened_at < self.reset_timeout:
-                raise RuntimeError(f"Circuit breaker OPEN; retry after {self.reset_timeout}s")
-            self.opened_at = None
-            self.failures = 0
+        state = self.state
+        if state == "open":
+            raise RuntimeError(f"Circuit breaker OPEN; retry after {self.reset_timeout}s")
         try:
             result = fn(*args, **kwargs)
-            self.failures = 0
-            return result
         except Exception:
             self.failures += 1
-            if self.failures >= self.threshold:
-                self.opened_at = time.time()
+            if state == "half-open" or self.failures >= self.threshold:
+                self.opened_at = time.monotonic()
             raise
+        self.opened_at = None
+        self.failures = 0
+        return result
 
     @property
     def state(self) -> str:
-        if self.opened_at is not None:
-            return "open"
-        if self.failures > 0:
-            return f"half-open ({self.failures}/{self.threshold} failures)"
-        return "closed"
+        if self.opened_at is None:
+            return "closed"
+        if time.monotonic() - self.opened_at >= self.reset_timeout:
+            return "half-open"
+        return "open"

@@ -1,7 +1,5 @@
 # Enterprise Knowledge Assistant: Architecture Notes
 
-This file is loaded on demand when the user asks how the capstone assistant works or how to extend it.
-
 ## Component Map
 
 ```text
@@ -37,7 +35,7 @@ All branches -> ReviewerAgent -> Final Answer
 
 ## Routing Design
 
-The production path uses deterministic guards before the LLM planner:
+`route_query()` checks these rules before calling the planner:
 
 - `ORD-*` -> MCP `query_order`
 - `SKU-*` with inventory intent -> MCP `check_inventory`

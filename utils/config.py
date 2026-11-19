@@ -214,14 +214,8 @@ def setup():
     env_path = _load_env_file()
     if env_path:
         print(f"[OK] 已加载配置: {env_path}")
-    else:
-        # 没有 .env，检查系统环境变量
-        if os.getenv("DASHSCOPE_API_KEY"):
-            print("[OK] 使用系统环境变量中的 DASHSCOPE_API_KEY")
-        else:
-            print("⚠️ 未找到 .env 配置文件，也没有 DASHSCOPE_API_KEY 环境变量")
-            print("   请先运行 Day0_环境配置与测试.ipynb 完成配置")
-
     env = Environment()
+    if not env_path and "dashscope" in (env.llm_backend, env.embedding_backend) and not os.getenv("DASHSCOPE_API_KEY"):
+        print("DashScope 需要 API Key。可在 Applications/App0_Setup_Check.ipynb 配置，或选择本地后端。")
     print(env)
     return env

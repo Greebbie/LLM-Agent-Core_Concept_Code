@@ -7,8 +7,6 @@ version: "0.1"
 
 # DB Query Skill
 
-This skill demonstrates Skills + MCP integration. The skill body teaches the model how to translate natural language into the right tool call; the actual data access happens through the `enterprise-demo` MCP server.
-
 ## When To Use
 
 - "Look up order ORD-001"

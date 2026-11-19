@@ -1,12 +1,10 @@
 # Skills Demo
 
-This folder contains three example Skills used in the application chapters:
-
 - `code_review/`: a compact skill for structured Python code review.
 - `db_query/`: a skill that routes order, inventory, and notification requests to the demo MCP server.
-- `capstone_assistant/`: the Day 5 capstone packaged as a reusable enterprise assistant skill.
+- `capstone_assistant/`: the assistant built in App8.
 
-Classroom framing: a Skill is just a small, inspectable folder. `SKILL.md` tells the model when to use the skill and what workflow to follow. Optional helper scripts contain executable logic. `reference/` holds supporting material that should only be loaded when needed.
+`SKILL.md` tells the model when to use the skill and what workflow to follow. Optional helper scripts contain executable logic. `reference/` holds supporting material that should only be loaded when needed.
 
 ```
 skills_demo/
@@ -21,12 +19,11 @@ skills_demo/
     ├── SKILL.md
     ├── pipeline.py
     ├── eval.py
+    ├── answer_checks.py
     └── reference/
 ```
 
-## What A Skill Demonstrates
-
-A Skill should be small enough to audit and concrete enough to route reliably:
+## SKILL.md and supporting files
 
 1. `name`: short, stable identifier.
 2. `description`: the routing contract. Write when to use it and what boundary it owns.
@@ -40,19 +37,18 @@ Avoid vague descriptions such as "AI assistant". Prefer descriptions like "summa
 
 Skills tell the model what process to follow. MCP gives the model callable tools.
 
-In this demo:
-
 - `db_query` tells the model how to map natural language to `query_order`, `check_inventory`, and `send_notification`.
 - `mcp_server_demo/server.py` exposes those tools over a small JSON-RPC stdio protocol.
 - `capstone_assistant` combines RAG, deterministic route guards, MCP calls, and evaluation.
 
 ## Quick Check
 
-```bash
-python -c "
+From the repository root, run this in Python.
+
+```python
 from utils.skills_helpers import discover_skills, validate_skill
-for s in discover_skills('Applications/skills_demo'):
-    v = validate_skill(s.skill_dir)
-    print(f'{s.name}: ok={v["ok"]} desc={s.description[:70]}')
-"
+
+for skill in discover_skills("Applications/skills_demo"):
+    result = validate_skill(skill.skill_dir)
+    print(skill.name, result["ok"], skill.description[:70])
 ```
